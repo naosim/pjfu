@@ -1,0 +1,55 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      .mermaid {
+        border: solid 1px #aaa;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/3.14.0/js-yaml.min.js" integrity="sha512-ia9gcZkLHA+lkNST5XlseHz/No5++YBneMsDp1IZRJSbi1YqQvBeskJuG1kR+PH1w7E0bFgEZegcj0EwpXQnww==" crossorigin="anonymous"></script>
+    <script>mermaid.initialize({startOnLoad:true});</script>
+    
+  </head>
+  <body>
+    <h1>プロジェクト譜</h1>
+    <div class="mermaid">
+    graph LR
+    S1[施策1]
+    M1[目標1]
+    S2[施策2]
+    M2[目標2]
+    G[ゴール]
+
+    S1 --> M1
+    S2 --> M2
+    M1 --> G
+    M2 --> G
+  </div>
+  <h2>表示</h2>
+  施策表示: <input type="checkbox" /><br>
+  表示ルート: <br>
+  ID指定: <input value="O0001" /><button>反映</button><br>
+  <button>編集対象から3階層上を表示</button><br>
+  編集対象: <input value="O0001" /><button>反映</button><br>
+  <textarea>こあれこ</textarea><br>
+  <button>保存</button><br>
+  リンク<br>
+  アクション<br>
+  <button>サブ目標追加</button>
+  <button>施策追加</button>
+
+  <h1>目標一覧</h1>
+  <pre>
+- ゴール
+  - 目標1
+  - 目標2
+  </pre>
+  <h1>タスク一覧</h1>
+<script>
+var okrYaml = `
+`.trim();
+
+var okrs = jsyaml.load(okrYaml);
+</script>
+  </body>
