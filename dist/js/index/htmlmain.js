@@ -418,9 +418,9 @@ function () {
   }
 
   DataStore.dataToObjectiveEntity = function (v) {
-    return new domain_1.Objective.Entity(new domain_1.Objective.Id(v.id), v.title, v.parent ? new domain_1.Objective.Id(v.parent) : null, new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links.map(function (v) {
-      return new domain_1.Link(v.name, v.path) || [];
-    })));
+    return new domain_1.Objective.Entity(new domain_1.Objective.Id(v.id), v.title, v.parent ? new domain_1.Objective.Id(v.parent) : null, new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links ? v.metaData.links.map(function (v) {
+      return new domain_1.Link(v.name, v.path);
+    }) : []));
   };
 
   DataStore.prototype.findAllObjective = function () {

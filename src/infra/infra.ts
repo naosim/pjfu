@@ -139,7 +139,10 @@ export class DataStore {
       new Objective.Id(v.id),
       v.title,
       v.parent ? new Objective.Id(v.parent) : null,
-      new MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links.map(v => new Link(v.name, v.path) || [])
+      new MetaData(
+        v.metaData.description, 
+        v.metaData.members || [], 
+        v.metaData.links ? v.metaData.links.map(v => new Link(v.name, v.path)) : [])
     )
   }
 
