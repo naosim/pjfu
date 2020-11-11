@@ -1,4 +1,4 @@
-import {MetaData, Objective} from './domain/domain'
+import {Link, MetaData, Objective} from './domain/domain'
 
 import {
   ObjectiveRepositoryImpl,
@@ -12,11 +12,7 @@ function qclick(selector, callback) {
   return document.querySelector(selector).addEventListener('click', callback);
 }
 
-
-
-
 try {
-
 const toMermaid = (entities: Objective.Entity[]) => {
   const map = {};
   entities.forEach(v => map[v.id.value] = v);
@@ -50,6 +46,29 @@ qclick('#applyRootIdButton', () => {
   onTreeUpdate()
 })
 
+const getMetaDataFormTextArea: () => MetaData = () => {
+  var text = q('#detailTextArea').value;
+  if(text.trim()[0] != '#') {
+    return new MetaData(text, [], []);
+  }
+  const obj = textToObj(text);
+  console.log(obj);
+  return new MetaData(
+    obj['説明'] || '', 
+    obj['担当'] ? obj['担当'].split(',').map(v => v.trim()) : [],
+    obj['リンク'] ? obj['リンク'].map(v => new Link(v.name, v.path)) : []
+  );
+}
+
+const setMetaDataToTextArea = (metaData: MetaData) => {
+  q('#detailTextArea').value = [
+    '# 説明: \n' + metaData.description, 
+    '', // 空行
+    '# 担当: ' + metaData.members.join(', '),
+    '# リンク: \n' + metaData.links.map(v => `- [${v.name}](${v.path})`)
+  ].join('\n');
+}
+
 qclick('#applyTargetIdButton', () => {
   const id = new Objective.Id(q('#targetId').value);
   const objective = objectiveRepository.findById(id);
@@ -57,7 +76,8 @@ qclick('#applyTargetIdButton', () => {
   q('#idSpan').innerHTML = objective.id.value;
   q('#titleInput').value = objective.title;
   q('#parentsInput').value = objective.parent.value;
-  q('#detailTextArea').value = objective.metaData.description;
+  setMetaDataToTextArea(objective.metaData);
+  q('#linkUl').innerHTML = objective.metaData.links.map(v => `<li><a href="${v.path}" target="_blank">${v.name}</a></li>`).join('\n')
 })
 
 qclick('#createSubButton', () => {
@@ -65,7 +85,7 @@ qclick('#createSubButton', () => {
 
   q('#idSpan').innerHTML = '';
   q('#titleInput').value = '';
-  q('#detailTextArea').value = '';
+  setMetaDataToTextArea(MetaData.empty());
 })
 
 qclick('#saveButton', () => {
@@ -77,7 +97,7 @@ qclick('#saveButton', () => {
     new Objective.Id(q('#idSpan').innerHTML),
     q('#titleInput').value,
     new Objective.Id(q('#parentsInput').value),
-    new MetaData(q('#detailTextArea').value, [])
+    getMetaDataFormTextArea()
   )
 
   if(newEntity.id.value == newEntity.parent.value) {
@@ -102,7 +122,7 @@ qclick('#insertButton', () => {
       id,
       q('#titleInput').value,
       new Objective.Id(q('#parentsInput').value),
-      new MetaData(q('#detailTextArea').value, [])
+      getMetaDataFormTextArea()
     )
     objectiveRepository.insert(newEntity, (e) => {
       console.log('callback');
@@ -131,3 +151,54 @@ window.addEventListener('hashchange', (e) => {
 if(location.hash) {
   q('#targetId').value = window.location.hash.slice(1);
 }
+
+/* 特殊な記法
+キー、バリューになっている
+ネスト不可
+バリューはテキスト or リンク配列
+
+# key: value
+
+# key: line1
+line2
+line3
+
+# key:
+- [name](url)
+
+*/ 
+function textToObj(text) {
+  text = text.trim();
+  if(text[0] != '#') {
+    throw new Error('不正なテキスト');
+  }
+  return text.split('\n').reduce((memo: string[][], v) => {
+    if(v.indexOf('# ') == 0) {
+      memo.push([v])
+    } else {
+      memo[memo.length - 1].push(v)
+    }
+    return memo;
+  }, []).reduce((memo, lines) => {
+    const key = lines[0].split('#')[1].split(':')[0].trim();
+    lines[0] = lines[0].indexOf(':') != -1 ? lines[0].slice(lines[0].indexOf(':') + 1) : '';
+    var value = lines.join('\n').trim();
+    if(value.indexOf('- [') == 0) {
+      value = value.split('\n').map(v => {
+        return {
+          name: v.split('[')[1].split(']')[0],
+          path: v.split('(')[1].split(')')[0],
+        }
+      }).reduce((memo, v) => {
+        memo.push(v);
+        return memo;
+      }, [])
+    }
+    memo[key] = value;
+
+
+
+    return memo;
+  }, {})
+}
+

@@ -1,4 +1,5 @@
 import {
+  Link,
   MetaData,
   Objective
 } from '../domain/domain'
@@ -132,6 +133,16 @@ export class OnMemoryObjectiveDataStore {
 export class DataStore {
   private callCount = 0;
   private list: Objective.Entity[];
+
+  static dataToObjectiveEntity(v): Objective.Entity {
+    return new Objective.Entity(
+      new Objective.Id(v.id),
+      v.title,
+      v.parent ? new Objective.Id(v.parent) : null,
+      new MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links.map(v => new Link(v.name, v.path) || [])
+    )
+  }
+
   findAllObjective(): Objective.Entity[] {
     if(this.callCount > 0) {
       throw '2回目の呼出です'
@@ -143,14 +154,7 @@ export class DataStore {
     }
     console.log(raw);
 
-    this.list = JSON.parse(raw).map(v => {
-      return new Objective.Entity(
-        new Objective.Id(v.id),
-        v.title,
-        v.parent ? new Objective.Id(v.parent) : null,
-        new MetaData(v.metaData.description, v.metaData.members)
-      )
-    })
+    this.list = JSON.parse(raw).map(v => DataStore.dataToObjectiveEntity(v))
 
     return this.list;
   }

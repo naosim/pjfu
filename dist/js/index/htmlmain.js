@@ -123,27 +123,55 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Objective = exports.MetaData = void 0;
+exports.Objective = exports.Link = exports.MetaData = void 0;
 
 var MetaData =
 /** @class */
 function () {
-  function MetaData(description, members) {
+  function MetaData(description, members, links) {
     this.description = description;
     this.members = members;
+    this.links = links;
   }
 
   MetaData.prototype.toObject = function () {
     return {
       description: this.description,
-      members: this.members
+      members: this.members,
+      links: this.links.map(function (v) {
+        return v.toObject();
+      })
     };
+  };
+
+  MetaData.empty = function () {
+    return new MetaData('', [], []);
   };
 
   return MetaData;
 }();
 
 exports.MetaData = MetaData;
+
+var Link =
+/** @class */
+function () {
+  function Link(name, path) {
+    this.name = name;
+    this.path = path;
+  }
+
+  Link.prototype.toObject = function () {
+    return {
+      name: this.name,
+      path: this.path
+    };
+  };
+
+  return Link;
+}();
+
+exports.Link = Link;
 var Objective;
 
 (function (Objective) {
@@ -169,7 +197,7 @@ var Objective;
     };
 
     Entity.root = function () {
-      return new Entity(Id.create(0), 'root', null, new MetaData('', []));
+      return new Entity(Id.create(0), 'root', null, MetaData.empty());
     };
 
     return Entity;
@@ -389,6 +417,12 @@ function () {
     this.callCount = 0;
   }
 
+  DataStore.dataToObjectiveEntity = function (v) {
+    return new domain_1.Objective.Entity(new domain_1.Objective.Id(v.id), v.title, v.parent ? new domain_1.Objective.Id(v.parent) : null, new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links.map(function (v) {
+      return new domain_1.Link(v.name, v.path) || [];
+    })));
+  };
+
   DataStore.prototype.findAllObjective = function () {
     if (this.callCount > 0) {
       throw '2回目の呼出です';
@@ -405,7 +439,7 @@ function () {
 
     console.log(raw);
     this.list = JSON.parse(raw).map(function (v) {
-      return new domain_1.Objective.Entity(new domain_1.Objective.Id(v.id), v.title, v.parent ? new domain_1.Objective.Id(v.parent) : null, new domain_1.MetaData(v.metaData.description, v.metaData.members));
+      return DataStore.dataToObjectiveEntity(v);
     });
     return this.list;
   };
@@ -522,6 +556,29 @@ try {
   qclick('#applyRootIdButton', function () {
     onTreeUpdate_1();
   });
+
+  var getMetaDataFormTextArea_1 = function getMetaDataFormTextArea_1() {
+    var text = q('#detailTextArea').value;
+
+    if (text.trim()[0] != '#') {
+      return new domain_1.MetaData(text, [], []);
+    }
+
+    var obj = textToObj(text);
+    console.log(obj);
+    return new domain_1.MetaData(obj['説明'] || '', obj['担当'] ? obj['担当'].split(',').map(function (v) {
+      return v.trim();
+    }) : [], obj['リンク'] ? obj['リンク'].map(function (v) {
+      return new domain_1.Link(v.name, v.path);
+    }) : []);
+  };
+
+  var setMetaDataToTextArea_1 = function setMetaDataToTextArea_1(metaData) {
+    q('#detailTextArea').value = ['# 説明: \n' + metaData.description, '', '# 担当: ' + metaData.members.join(', '), '# リンク: \n' + metaData.links.map(function (v) {
+      return "- [" + v.name + "](" + v.path + ")";
+    })].join('\n');
+  };
+
   qclick('#applyTargetIdButton', function () {
     var id = new domain_1.Objective.Id(q('#targetId').value);
     var objective = objectiveRepository_1.findById(id);
@@ -529,13 +586,16 @@ try {
     q('#idSpan').innerHTML = objective.id.value;
     q('#titleInput').value = objective.title;
     q('#parentsInput').value = objective.parent.value;
-    q('#detailTextArea').value = objective.metaData.description;
+    setMetaDataToTextArea_1(objective.metaData);
+    q('#linkUl').innerHTML = objective.metaData.links.map(function (v) {
+      return "<li><a href=\"" + v.path + "\" target=\"_blank\">" + v.name + "</a></li>";
+    }).join('\n');
   });
   qclick('#createSubButton', function () {
     q('#parentsInput').value = q('#idSpan').innerHTML;
     q('#idSpan').innerHTML = '';
     q('#titleInput').value = '';
-    q('#detailTextArea').value = '';
+    setMetaDataToTextArea_1(domain_1.MetaData.empty());
   });
   qclick('#saveButton', function () {
     if (q('#idSpan').innerHTML.trim().length == 0) {
@@ -543,7 +603,7 @@ try {
       throw new Error('ID未確定のため更新できません');
     }
 
-    var newEntity = new domain_1.Objective.Entity(new domain_1.Objective.Id(q('#idSpan').innerHTML), q('#titleInput').value, new domain_1.Objective.Id(q('#parentsInput').value), new domain_1.MetaData(q('#detailTextArea').value, []));
+    var newEntity = new domain_1.Objective.Entity(new domain_1.Objective.Id(q('#idSpan').innerHTML), q('#titleInput').value, new domain_1.Objective.Id(q('#parentsInput').value), getMetaDataFormTextArea_1());
 
     if (newEntity.id.value == newEntity.parent.value) {
       alert('IDとparentが同一です');
@@ -564,7 +624,7 @@ try {
   });
   qclick('#insertButton', function () {
     objectiveRepository_1.createId(function (err, id) {
-      var newEntity = new domain_1.Objective.Entity(id, q('#titleInput').value, new domain_1.Objective.Id(q('#parentsInput').value), new domain_1.MetaData(q('#detailTextArea').value, []));
+      var newEntity = new domain_1.Objective.Entity(id, q('#titleInput').value, new domain_1.Objective.Id(q('#parentsInput').value), getMetaDataFormTextArea_1());
       objectiveRepository_1.insert(newEntity, function (e) {
         console.log('callback');
 
@@ -588,6 +648,59 @@ window.addEventListener('hashchange', function (e) {
 
 if (location.hash) {
   q('#targetId').value = window.location.hash.slice(1);
+}
+/* 特殊な記法
+キー、バリューになっている
+ネスト不可
+バリューはテキスト or リンク配列
+
+# key: value
+
+# key: line1
+line2
+line3
+
+# key:
+- [name](url)
+
+*/
+
+
+function textToObj(text) {
+  text = text.trim();
+
+  if (text[0] != '#') {
+    throw new Error('不正なテキスト');
+  }
+
+  return text.split('\n').reduce(function (memo, v) {
+    if (v.indexOf('# ') == 0) {
+      memo.push([v]);
+    } else {
+      memo[memo.length - 1].push(v);
+    }
+
+    return memo;
+  }, []).reduce(function (memo, lines) {
+    var key = lines[0].split('#')[1].split(':')[0].trim();
+    lines[0] = lines[0].indexOf(':') != -1 ? lines[0].slice(lines[0].indexOf(':') + 1) : '';
+    var value = lines.join('\n').trim();
+
+    if (value.indexOf('- [') == 0) {
+      value = value.split('\n').map(function (v) {
+        return {
+          name: v.split('[')[1].split(']')[0],
+          path: v.split('(')[1].split(')')[0]
+        };
+      }).reduce(function (memo, v) {
+        memo.push(v);
+        return memo;
+      }, []);
+    }
+
+    memo[key] = value;
+    return memo;
+  }, {});
 }
 },{"./domain/domain":"domain/domain.ts","./infra/infra":"infra/infra.ts"}],"../../../../../../usr/local/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
