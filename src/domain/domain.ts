@@ -1,3 +1,12 @@
+
+export interface StringValueObject {
+  readonly value: string;
+}
+
+export interface EntityIf<T extends StringValueObject> {
+  readonly id: T;
+}
+
 export class MetaData {
   constructor(
     readonly description: string,
@@ -30,7 +39,7 @@ export class Link {
 
 
 export module Objective {
-  export class Entity {
+  export class Entity implements EntityIf<Id> {
     isRoot: boolean;
     isNotRoot: boolean;
     constructor(
@@ -41,6 +50,9 @@ export module Objective {
     ) {
       this.isRoot = parent ? false: true;
       this.isNotRoot = !this.isRoot;
+      if(id.eq(parent)) {
+        throw new Error('IDとparentが同一です');
+      }
     }
 
     toObject() {
@@ -61,7 +73,7 @@ export module Objective {
       );
     }
   }
-  export class Id {
+  export class Id implements StringValueObject {
     constructor(
       readonly value: string
     ){}
@@ -72,8 +84,50 @@ export module Objective {
     toObject(): any {
       return this.value
     }
+
+    eq(other: Id): boolean {
+      
+      return other && this.value === other.value
+    }
   }
   
   
 }
 
+export module Action {
+  export class Entity implements EntityIf<Id> {
+    constructor(
+      readonly id: Id,
+      readonly title: string,
+      readonly parents: Objective.Id[],
+      readonly metaData: MetaData
+    ) {
+    }
+    toObject() {
+      return {
+        id: this.id.toObject(),
+        title: this.title,
+        parents: this.parents.map(v => v.toObject()),
+        metaData: this.metaData.toObject()
+      }
+    }
+  }
+  export class Id implements StringValueObject {
+    constructor(
+      readonly value: string
+    ){}
+    static create(num: number): Id {
+      return new Id('A' + num);
+    }
+
+    toObject(): any {
+      return this.value
+    }
+
+    eq(other: Id): boolean {
+      return other && this.value === other.value
+    }
+  }
+  
+  
+}

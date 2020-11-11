@@ -1,7 +1,12 @@
-import {Link, MetaData, Objective} from './domain/domain'
+import {
+  Link, 
+  MetaData, 
+  StringValueObject,
+  Objective, Action} from './domain/domain'
 
 import {
   ObjectiveRepositoryImpl,
+  ActionRepositoryImpl,
   DataStore
 } from './infra/infra'
 declare const mermaid: any;
@@ -13,32 +18,40 @@ function qclick(selector, callback) {
 }
 
 try {
-const toMermaid = (entities: Objective.Entity[]) => {
+const toMermaid = (entities: Objective.Entity[], actions: Action.Entity[]) => {
   const map = {};
   entities.forEach(v => map[v.id.value] = v);
   const rectText = entities.map(v => `${v.id.value}["${v.title}"]`).join('\n');
   const linkText = entities.map(v => `click ${v.id.value} "./index.html#${v.id.value}"`).join('\n');
   const arrowText = entities.filter(v => v.parent && map[v.parent.value]).map(v => `${v.id.value} --> ${v.parent.value}`).join('\n');
+
+  const roundText = actions.map(v => `${v.id.value}("${v.title}"):::action`).join('\n');
+  const actionLinkText = actions.map(v => `click ${v.id.value} "./index.html#${v.id.value}"`).join('\n');
+  const actionArrowText = actions.map(v => v.parents.map(p => `${v.id.value} --> ${p.value}`).join('\n')).join('\n');
   return `
 graph LR
+classDef action fill:#ECFFEC, stroke: #93DB70;
 ${rectText}
 ${linkText}
 ${arrowText}
+${roundText}
+${actionLinkText}
+${actionArrowText}
   `.trim()
 }
-const objectiveRepository = new ObjectiveRepositoryImpl(new DataStore())
+const dataStore = new DataStore();
+const objectiveRepository = new ObjectiveRepositoryImpl(dataStore)
+const actionRepository = new ActionRepositoryImpl(dataStore)
 
 const onTreeUpdate = () => {
   const treeRootId = new Objective.Id(q('#rootIdSpan').value);
   var element = document.querySelector("#profu");
   console.log(objectiveRepository.findAll());
   const entities = objectiveRepository.findUnder(treeRootId)
-  var text = toMermaid(entities);
+  const actions = actionRepository.findAll()
+  var text = toMermaid(entities, actions);
   console.log(text);
-  const insertSvg = function(svgCode, bindFunctions){
-    element.innerHTML = svgCode;
-  };
-  var graph = mermaid.mermaidAPI.render('graphDiv', text, (svg) => element.innerHTML = svg);
+  mermaid.mermaidAPI.render('graphDiv', text, (svg) => element.innerHTML = svg);
 }
 onTreeUpdate();
 
@@ -69,15 +82,33 @@ const setMetaDataToTextArea = (metaData: MetaData) => {
   ].join('\n');
 }
 
+const isObjectiveId = (id: string) => id[0] == 'O';
+const isActionId = (id: string) => id[0] == 'A';
+
 qclick('#applyTargetIdButton', () => {
-  const id = new Objective.Id(q('#targetId').value);
-  const objective = objectiveRepository.findById(id);
-  console.log(objective);
-  q('#idSpan').innerHTML = objective.id.value;
-  q('#titleInput').value = objective.title;
-  q('#parentsInput').value = objective.parent.value;
-  setMetaDataToTextArea(objective.metaData);
-  q('#linkUl').innerHTML = objective.metaData.links.map(v => `<li><a href="${v.path}" target="_blank">${v.name}</a></li>`).join('\n')
+  if(isObjectiveId(q('#targetId').value)) {
+    const id = new Objective.Id(q('#targetId').value);
+    const objective = objectiveRepository.findById(id);
+    console.log(objective);
+    q('#idSpan').innerHTML = objective.id.value;
+    q('#titleInput').value = objective.title;
+    q('#parentsInput').value = objective.parent.value;
+    setMetaDataToTextArea(objective.metaData);
+    q('#linkUl').innerHTML = objective.metaData.links.map(v => `<li><a href="${v.path}" target="_blank">${v.name}</a></li>`).join('\n')
+  } else if(isActionId(q('#targetId').value)) {
+    const id = new Action.Id(q('#targetId').value);
+    const action = actionRepository.findById(id);
+    console.log(action);
+    q('#idSpan').innerHTML = action.id.value;
+    q('#titleInput').value = action.title;
+    q('#parentsInput').value = action.parents.map(v => v.value);
+    setMetaDataToTextArea(action.metaData);
+    q('#linkUl').innerHTML = action.metaData.links.map(v => `<li><a href="${v.path}" target="_blank">${v.name}</a></li>`).join('\n')
+  } else {
+    alert('未知のID');
+    throw new Error('未知のID');
+  }
+  
 })
 
 qclick('#createSubButton', () => {
@@ -93,27 +124,41 @@ qclick('#saveButton', () => {
     alert('ID未確定のため更新できません');
     throw new Error('ID未確定のため更新できません');
   }
-  const newEntity = new Objective.Entity(
-    new Objective.Id(q('#idSpan').innerHTML),
-    q('#titleInput').value,
-    new Objective.Id(q('#parentsInput').value),
-    getMetaDataFormTextArea()
-  )
-
-  if(newEntity.id.value == newEntity.parent.value) {
-    alert('IDとparentが同一です');
-    throw new Error('IDとparentが同一です');
-  }
-
-  objectiveRepository.update(newEntity, (e) => {
-    console.log('callback');
+  const callbackOnSaved = (e) => {
     if(e) {
       console.error(e);
       alert('エラー: ' + e.message);
       return;
     }
     onTreeUpdate();
-  });
+  }
+  const idInHtml = q('#idSpan').innerHTML.trim();
+  if(idInHtml == q('#parentsInput').value) {
+    alert('IDとparentが同一です');
+    throw new Error('IDとparentが同一です');
+  }
+  if(isObjectiveId(idInHtml)) {// 目標の保存
+    const newEntity = new Objective.Entity(
+      new Objective.Id(idInHtml),
+      q('#titleInput').value,
+      new Objective.Id(q('#parentsInput').value),
+      getMetaDataFormTextArea()
+    )
+    objectiveRepository.update(newEntity, callbackOnSaved);
+  } else if(isActionId(idInHtml)) {// 施策の保存
+    const newEntity = new Action.Entity(
+      new Action.Id(q('#idSpan').innerHTML),
+      q('#titleInput').value,
+      q('#parentsInput').value.split(',').map(v => new Action.Id(v.trim())),
+      getMetaDataFormTextArea()
+    )
+    actionRepository.update(newEntity, callbackOnSaved);
+  } else {
+    alert('未知のID');
+    throw new Error('未知のID');
+  }
+
+  
 })
 
 qclick('#insertButton', () => {
@@ -134,8 +179,26 @@ qclick('#insertButton', () => {
       onTreeUpdate();
     });
   })
-  
-  
+})
+
+qclick('#insertActionButton', () => {
+  actionRepository.createId((err, id) => {
+    const newEntity = new Action.Entity(
+      id,
+      q('#titleInput').value,
+      q('#parentsInput').value.split(',').map(v => new Objective.Id(v.trim())),
+      getMetaDataFormTextArea()
+    )
+    actionRepository.insert(newEntity, (e) => {
+      console.log('callback');
+      if(e) {
+        console.error(e);
+        alert('エラー: ' + e.message);
+        return;
+      }
+      onTreeUpdate();
+    });
+  })
 })
 
 } catch(e) {

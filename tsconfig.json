@@ -3,6 +3,8 @@
     "outDir": "./dist",                        /* 出力構造をディレクトリにリダイレクトします。 */
     "rootDir": "./src",
     "lib": ["es2019", "dom"],
-    "target": "es5"
+    "target": "es5",
+    "strictPropertyInitialization": true,
+    "strictNullChecks": true
   }
 }

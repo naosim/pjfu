@@ -123,7 +123,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Objective = exports.Link = exports.MetaData = void 0;
+exports.Action = exports.Objective = exports.Link = exports.MetaData = void 0;
 
 var MetaData =
 /** @class */
@@ -185,6 +185,10 @@ var Objective;
       this.metaData = metaData;
       this.isRoot = parent ? false : true;
       this.isNotRoot = !this.isRoot;
+
+      if (id.eq(parent)) {
+        throw new Error('IDとparentが同一です');
+      }
     }
 
     Entity.prototype.toObject = function () {
@@ -220,18 +224,76 @@ var Objective;
       return this.value;
     };
 
+    Id.prototype.eq = function (other) {
+      return other && this.value === other.value;
+    };
+
     return Id;
   }();
 
   Objective.Id = Id;
 })(Objective = exports.Objective || (exports.Objective = {}));
+
+var Action;
+
+(function (Action) {
+  var Entity =
+  /** @class */
+  function () {
+    function Entity(id, title, parents, metaData) {
+      this.id = id;
+      this.title = title;
+      this.parents = parents;
+      this.metaData = metaData;
+    }
+
+    Entity.prototype.toObject = function () {
+      return {
+        id: this.id.toObject(),
+        title: this.title,
+        parents: this.parents.map(function (v) {
+          return v.toObject();
+        }),
+        metaData: this.metaData.toObject()
+      };
+    };
+
+    return Entity;
+  }();
+
+  Action.Entity = Entity;
+
+  var Id =
+  /** @class */
+  function () {
+    function Id(value) {
+      this.value = value;
+    }
+
+    Id.create = function (num) {
+      return new Id('A' + num);
+    };
+
+    Id.prototype.toObject = function () {
+      return this.value;
+    };
+
+    Id.prototype.eq = function (other) {
+      return other && this.value === other.value;
+    };
+
+    return Id;
+  }();
+
+  Action.Id = Id;
+})(Action = exports.Action || (exports.Action = {}));
 },{}],"infra/infra.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.DataStore = exports.OnMemoryObjectiveDataStore = exports.ObjectiveRepositoryImpl = void 0;
+exports.DataStore = exports.OnMemoryDataStore = exports.ActionRepositoryImpl = exports.ObjectiveRepositoryImpl = void 0;
 
 var domain_1 = require("../domain/domain");
 
@@ -240,7 +302,7 @@ var ObjectiveRepositoryImpl =
 function () {
   function ObjectiveRepositoryImpl(dataStore) {
     this.dataStore = dataStore;
-    this.onMemoryObjectiveDataStore = new OnMemoryObjectiveDataStore(dataStore.findAllObjective());
+    this.onMemoryObjectiveDataStore = new OnMemoryDataStore(dataStore.findAllObjective());
   }
 
   ObjectiveRepositoryImpl.prototype.createId = function (callback) {
@@ -299,7 +361,7 @@ function () {
       throw new Error("entity not found: " + entity.id.value);
     }
 
-    this.dataStore.isExist(entity.id, function (e, v) {
+    this.dataStore.isExistObjective(entity.id, function (e, v) {
       if (e) {
         callback(e);
         return;
@@ -310,7 +372,7 @@ function () {
         return;
       }
 
-      _this.dataStore.update(entity, function (e) {
+      _this.dataStore.updateObjective(entity, function (e) {
         if (e) {
           callback(e);
           return;
@@ -330,7 +392,7 @@ function () {
       throw new Error("entity already exists: " + entity.id.value);
     }
 
-    this.dataStore.isExist(entity.id, function (e, v) {
+    this.dataStore.isExistObjective(entity.id, function (e, v) {
       if (e) {
         callback(e);
         return;
@@ -341,7 +403,7 @@ function () {
         return;
       }
 
-      _this.dataStore.insert(entity, function (e) {
+      _this.dataStore.insertObjective(entity, function (e) {
         if (e) {
           callback(e);
           return;
@@ -359,10 +421,100 @@ function () {
 
 exports.ObjectiveRepositoryImpl = ObjectiveRepositoryImpl;
 
-var OnMemoryObjectiveDataStore =
+var ActionRepositoryImpl =
 /** @class */
 function () {
-  function OnMemoryObjectiveDataStore(entities) {
+  function ActionRepositoryImpl(dataStore) {
+    this.dataStore = dataStore;
+    this.onMemoryObjectiveDataStore = new OnMemoryDataStore(dataStore.findAllAction());
+  }
+
+  ActionRepositoryImpl.prototype.createId = function (callback) {
+    var num = Math.floor(Date.now() / 1000);
+    setTimeout(function () {
+      return callback(null, domain_1.Action.Id.create(num));
+    }, 100);
+  };
+
+  ActionRepositoryImpl.prototype.findAll = function () {
+    return this.onMemoryObjectiveDataStore.findAll();
+  };
+
+  ActionRepositoryImpl.prototype.findById = function (id) {
+    return this.onMemoryObjectiveDataStore.findById(id);
+  };
+
+  ActionRepositoryImpl.prototype.update = function (entity, callback) {
+    var _this = this;
+
+    if (!this.onMemoryObjectiveDataStore.isExist(entity.id)) {
+      throw new Error("entity not found: " + entity.id.value);
+    }
+
+    this.dataStore.isExistAction(entity.id, function (e, v) {
+      if (e) {
+        callback(e);
+        return;
+      }
+
+      if (!v) {
+        callback(new Error('entity not found: ' + entity.id.value));
+        return;
+      }
+
+      _this.dataStore.updateAction(entity, function (e) {
+        if (e) {
+          callback(e);
+          return;
+        }
+
+        _this.onMemoryObjectiveDataStore.update(entity);
+
+        callback(null);
+      });
+    });
+  };
+
+  ActionRepositoryImpl.prototype.insert = function (entity, callback) {
+    var _this = this;
+
+    if (this.onMemoryObjectiveDataStore.isExist(entity.id)) {
+      throw new Error("entity already exists: " + entity.id.value);
+    }
+
+    this.dataStore.isExistAction(entity.id, function (e, v) {
+      if (e) {
+        callback(e);
+        return;
+      }
+
+      if (v) {
+        throw new Error("entity already exists: " + entity.id.value);
+        return;
+      }
+
+      _this.dataStore.insertAction(entity, function (e) {
+        if (e) {
+          callback(e);
+          return;
+        }
+
+        _this.onMemoryObjectiveDataStore.insert(entity);
+
+        callback(null);
+      });
+    });
+  };
+
+  return ActionRepositoryImpl;
+}();
+
+exports.ActionRepositoryImpl = ActionRepositoryImpl;
+
+var OnMemoryDataStore =
+/** @class */
+function () {
+  function OnMemoryDataStore(entities) {
     var _this = this;
 
     this.entityMap = {};
@@ -371,7 +523,7 @@ function () {
     });
   }
 
-  OnMemoryObjectiveDataStore.prototype.findAll = function () {
+  OnMemoryDataStore.prototype.findAll = function () {
     var _this = this;
 
     return Object.keys(this.entityMap).map(function (key) {
@@ -379,15 +531,15 @@ function () {
     });
   };
 
-  OnMemoryObjectiveDataStore.prototype.findById = function (id) {
+  OnMemoryDataStore.prototype.findById = function (id) {
     return this.entityMap[id.value];
   };
 
-  OnMemoryObjectiveDataStore.prototype.isExist = function (id) {
+  OnMemoryDataStore.prototype.isExist = function (id) {
     return this.entityMap[id.value] ? true : false;
   };
 
-  OnMemoryObjectiveDataStore.prototype.update = function (entity) {
+  OnMemoryDataStore.prototype.update = function (entity) {
     if (!this.isExist(entity.id)) {
       throw new Error("entity not found: " + entity.id.value);
     }
@@ -396,7 +548,7 @@ function () {
     console.log('update onMemory');
   };
 
-  OnMemoryObjectiveDataStore.prototype.insert = function (entity) {
+  OnMemoryDataStore.prototype.insert = function (entity) {
     if (this.isExist(entity.id)) {
       throw new Error("entity already exists: " + entity.id.value);
     }
@@ -405,10 +557,10 @@ function () {
     console.log('insert onMemory');
   };
 
-  return OnMemoryObjectiveDataStore;
+  return OnMemoryDataStore;
 }();
 
-exports.OnMemoryObjectiveDataStore = OnMemoryObjectiveDataStore;
+exports.OnMemoryDataStore = OnMemoryDataStore;
 
 var DataStore =
 /** @class */
@@ -419,6 +571,14 @@ function () {
 
   DataStore.dataToObjectiveEntity = function (v) {
     return new domain_1.Objective.Entity(new domain_1.Objective.Id(v.id), v.title, v.parent ? new domain_1.Objective.Id(v.parent) : null, new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links ? v.metaData.links.map(function (v) {
+      return new domain_1.Link(v.name, v.path);
+    }) : []));
+  };
+
+  DataStore.dataToActionEntity = function (v) {
+    return new domain_1.Action.Entity(new domain_1.Objective.Id(v.id), v.title, v.parents.map(function (v) {
+      return new domain_1.Action.Id(v);
+    }), new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links ? v.metaData.links.map(function (v) {
       return new domain_1.Link(v.name, v.path);
     }) : []));
   };
@@ -444,11 +604,30 @@ function () {
     return this.list;
   };
 
-  DataStore.prototype.update = function (entity, callback) {
+  DataStore.prototype.findAllAction = function () {
+    if (this.callCount > 0) {
+      throw '2回目の呼出です';
+    }
+
+    var raw = localStorage.getItem('actionTree');
+
+    if (!raw) {
+      raw = '[]';
+      localStorage.setItem('actionTree', raw);
+    }
+
+    console.log(raw);
+    this.actions = JSON.parse(raw).map(function (v) {
+      return DataStore.dataToActionEntity(v);
+    });
+    return this.actions;
+  };
+
+  DataStore.prototype.updateObjective = function (entity, callback) {
     for (var i = 0; i < this.list.length; i++) {
       if (this.list[i].id.value == entity.id.value) {
         this.list[i] = entity;
-        this.save();
+        this.saveObjective();
         setTimeout(function () {
           return callback(null);
         }, 100);
@@ -461,13 +640,36 @@ function () {
     }, 100);
   };
 
-  DataStore.prototype.insert = function (entity, callback) {
+  DataStore.prototype.updateAction = function (entity, callback) {
+    for (var i = 0; i < this.actions.length; i++) {
+      if (this.actions[i].id.value == entity.id.value) {
+        this.actions[i] = entity;
+        this.saveAction();
+        setTimeout(function () {
+          return callback(null);
+        }, 100);
+        return;
+      }
+    }
+
+    setTimeout(function () {
+      return callback(new Error("entity not found: " + entity.id.value));
+    }, 100);
+  };
+
+  DataStore.prototype.insertObjective = function (entity, callback) {
     this.list.push(entity);
-    this.save();
+    this.saveObjective();
     callback(null);
   };
 
-  DataStore.prototype.isExist = function (id, callback) {
+  DataStore.prototype.insertAction = function (entity, callback) {
+    this.actions.push(entity);
+    this.saveAction();
+    callback(null);
+  };
+
+  DataStore.prototype.isExistObjective = function (id, callback) {
     for (var i = 0; i < this.list.length; i++) {
       if (this.list[i].id.value == id.value) {
         setTimeout(function () {
@@ -482,12 +684,35 @@ function () {
     }, 100);
   };
 
-  DataStore.prototype.save = function () {
+  DataStore.prototype.isExistAction = function (id, callback) {
+    for (var i = 0; i < this.actions.length; i++) {
+      if (this.actions[i].id.value == id.value) {
+        setTimeout(function () {
+          return callback(null, true);
+        }, 100);
+        return;
+      }
+    }
+
+    setTimeout(function () {
+      return callback(null, false);
+    }, 100);
+  };
+
+  DataStore.prototype.saveObjective = function () {
     var raw = JSON.stringify(this.list.map(function (v) {
       return v.toObject();
     }));
     console.log(raw);
     localStorage.setItem('objectiveTree', raw);
+  };
+
+  DataStore.prototype.saveAction = function () {
+    var raw = JSON.stringify(this.actions.map(function (v) {
+      return v.toObject();
+    }));
+    console.log(raw);
+    localStorage.setItem('actionTree', raw);
   };
 
   return DataStore;
@@ -514,7 +739,7 @@ function qclick(selector, callback) {
 }
 
 try {
-  var toMermaid_1 = function toMermaid_1(entities) {
+  var toMermaid_1 = function toMermaid_1(entities, actions) {
     var map = {};
     entities.forEach(function (v) {
       return map[v.id.value] = v;
@@ -530,24 +755,33 @@ try {
     }).map(function (v) {
       return v.id.value + " --> " + v.parent.value;
     }).join('\n');
-    return ("\ngraph LR\n" + rectText + "\n" + linkText + "\n" + arrowText + "\n  ").trim();
+    var roundText = actions.map(function (v) {
+      return v.id.value + "(\"" + v.title + "\"):::action";
+    }).join('\n');
+    var actionLinkText = actions.map(function (v) {
+      return "click " + v.id.value + " \"./index.html#" + v.id.value + "\"";
+    }).join('\n');
+    var actionArrowText = actions.map(function (v) {
+      return v.parents.map(function (p) {
+        return v.id.value + " --> " + p.value;
+      }).join('\n');
+    }).join('\n');
+    return ("\ngraph LR\nclassDef action fill:#ECFFEC, stroke: #93DB70;\n" + rectText + "\n" + linkText + "\n" + arrowText + "\n" + roundText + "\n" + actionLinkText + "\n" + actionArrowText + "\n  ").trim();
   };
 
-  var objectiveRepository_1 = new infra_1.ObjectiveRepositoryImpl(new infra_1.DataStore());
+  var dataStore = new infra_1.DataStore();
+  var objectiveRepository_1 = new infra_1.ObjectiveRepositoryImpl(dataStore);
+  var actionRepository_1 = new infra_1.ActionRepositoryImpl(dataStore);
 
   var onTreeUpdate_1 = function onTreeUpdate_1() {
     var treeRootId = new domain_1.Objective.Id(q('#rootIdSpan').value);
     var element = document.querySelector("#profu");
     console.log(objectiveRepository_1.findAll());
     var entities = objectiveRepository_1.findUnder(treeRootId);
-    var text = toMermaid_1(entities);
+    var actions = actionRepository_1.findAll();
+    var text = toMermaid_1(entities, actions);
     console.log(text);
-
-    var insertSvg = function insertSvg(svgCode, bindFunctions) {
-      element.innerHTML = svgCode;
-    };
-
-    var graph = mermaid.mermaidAPI.render('graphDiv', text, function (svg) {
+    mermaid.mermaidAPI.render('graphDiv', text, function (svg) {
       return element.innerHTML = svg;
     });
   };
@@ -579,17 +813,43 @@ try {
     })].join('\n');
   };
 
+  var isObjectiveId_1 = function isObjectiveId_1(id) {
+    return id[0] == 'O';
+  };
+
+  var isActionId_1 = function isActionId_1(id) {
+    return id[0] == 'A';
+  };
+
   qclick('#applyTargetIdButton', function () {
-    var id = new domain_1.Objective.Id(q('#targetId').value);
-    var objective = objectiveRepository_1.findById(id);
-    console.log(objective);
-    q('#idSpan').innerHTML = objective.id.value;
-    q('#titleInput').value = objective.title;
-    q('#parentsInput').value = objective.parent.value;
-    setMetaDataToTextArea_1(objective.metaData);
-    q('#linkUl').innerHTML = objective.metaData.links.map(function (v) {
-      return "<li><a href=\"" + v.path + "\" target=\"_blank\">" + v.name + "</a></li>";
-    }).join('\n');
+    if (isObjectiveId_1(q('#targetId').value)) {
+      var id = new domain_1.Objective.Id(q('#targetId').value);
+      var objective = objectiveRepository_1.findById(id);
+      console.log(objective);
+      q('#idSpan').innerHTML = objective.id.value;
+      q('#titleInput').value = objective.title;
+      q('#parentsInput').value = objective.parent.value;
+      setMetaDataToTextArea_1(objective.metaData);
+      q('#linkUl').innerHTML = objective.metaData.links.map(function (v) {
+        return "<li><a href=\"" + v.path + "\" target=\"_blank\">" + v.name + "</a></li>";
+      }).join('\n');
+    } else if (isActionId_1(q('#targetId').value)) {
+      var id = new domain_1.Action.Id(q('#targetId').value);
+      var action = actionRepository_1.findById(id);
+      console.log(action);
+      q('#idSpan').innerHTML = action.id.value;
+      q('#titleInput').value = action.title;
+      q('#parentsInput').value = action.parents.map(function (v) {
+        return v.value;
+      });
+      setMetaDataToTextArea_1(action.metaData);
+      q('#linkUl').innerHTML = action.metaData.links.map(function (v) {
+        return "<li><a href=\"" + v.path + "\" target=\"_blank\">" + v.name + "</a></li>";
+      }).join('\n');
+    } else {
+      alert('未知のID');
+      throw new Error('未知のID');
+    }
   });
   qclick('#createSubButton', function () {
     q('#parentsInput').value = q('#idSpan').innerHTML;
@@ -603,16 +863,7 @@ try {
       throw new Error('ID未確定のため更新できません');
     }
 
-    var newEntity = new domain_1.Objective.Entity(new domain_1.Objective.Id(q('#idSpan').innerHTML), q('#titleInput').value, new domain_1.Objective.Id(q('#parentsInput').value), getMetaDataFormTextArea_1());
-
-    if (newEntity.id.value == newEntity.parent.value) {
-      alert('IDとparentが同一です');
-      throw new Error('IDとparentが同一です');
-    }
-
-    objectiveRepository_1.update(newEntity, function (e) {
-      console.log('callback');
-
+    var callbackOnSaved = function callbackOnSaved(e) {
       if (e) {
         console.error(e);
         alert('エラー: ' + e.message);
@@ -620,12 +871,52 @@ try {
       }
 
       onTreeUpdate_1();
-    });
+    };
+
+    var idInHtml = q('#idSpan').innerHTML.trim();
+
+    if (idInHtml == q('#parentsInput').value) {
+      alert('IDとparentが同一です');
+      throw new Error('IDとparentが同一です');
+    }
+
+    if (isObjectiveId_1(idInHtml)) {
+      // 目標の保存
+      var newEntity = new domain_1.Objective.Entity(new domain_1.Objective.Id(idInHtml), q('#titleInput').value, new domain_1.Objective.Id(q('#parentsInput').value), getMetaDataFormTextArea_1());
+      objectiveRepository_1.update(newEntity, callbackOnSaved);
+    } else if (isActionId_1(idInHtml)) {
+      // 施策の保存
+      var newEntity = new domain_1.Action.Entity(new domain_1.Action.Id(q('#idSpan').innerHTML), q('#titleInput').value, q('#parentsInput').value.split(',').map(function (v) {
+        return new domain_1.Action.Id(v.trim());
+      }), getMetaDataFormTextArea_1());
+      actionRepository_1.update(newEntity, callbackOnSaved);
+    } else {
+      alert('未知のID');
+      throw new Error('未知のID');
+    }
   });
   qclick('#insertButton', function () {
     objectiveRepository_1.createId(function (err, id) {
       var newEntity = new domain_1.Objective.Entity(id, q('#titleInput').value, new domain_1.Objective.Id(q('#parentsInput').value), getMetaDataFormTextArea_1());
       objectiveRepository_1.insert(newEntity, function (e) {
+        console.log('callback');
+
+        if (e) {
+          console.error(e);
+          alert('エラー: ' + e.message);
+          return;
+        }
+
+        onTreeUpdate_1();
+      });
+    });
+  });
+  qclick('#insertActionButton', function () {
+    actionRepository_1.createId(function (err, id) {
+      var newEntity = new domain_1.Action.Entity(id, q('#titleInput').value, q('#parentsInput').value.split(',').map(function (v) {
+        return new domain_1.Objective.Id(v.trim());
+      }), getMetaDataFormTextArea_1());
+      actionRepository_1.insert(newEntity, function (e) {
         console.log('callback');
 
         if (e) {

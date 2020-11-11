@@ -6,6 +6,9 @@
       .mermaid {
         border: solid 1px #aaa;
       }
+      g.label {
+        font-size: 9pt;
+      }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/3.14.0/js-yaml.min.js" integrity="sha512-ia9gcZkLHA+lkNST5XlseHz/No5++YBneMsDp1IZRJSbi1YqQvBeskJuG1kR+PH1w7E0bFgEZegcj0EwpXQnww==" crossorigin="anonymous"></script>
@@ -22,7 +25,7 @@
   タイトル: <input id="titleInput" /><br>
   上位: <input id="parentsInput" /><br>
   <textarea id="detailTextArea"></textarea><br>
-  <button id="saveButton">更新</button><button id="insertButton">新規作成</button><br>
+  <button id="saveButton">更新</button><button id="insertButton">新規目標作成</button><button id="insertActionButton">新規施策作成</button><br>
   リンク<br>
   <ul id="linkUl"></ul>
   アクション<br>
