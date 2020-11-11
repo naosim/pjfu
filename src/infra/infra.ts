@@ -1,23 +1,26 @@
-import {Objective} from '../domain/domain'
+import {
+  MetaData,
+  Objective
+} from '../domain/domain'
 
 export class ObjectiveRepositoryImpl {
-  private entities: Objective.Entity[]
-  private entityMap: {[key:string]: Objective.Entity}
+  private onMemoryObjectiveDataStore: OnMemoryObjectiveDataStore
   
   constructor(private dataStore: DataStore) {
+    this.onMemoryObjectiveDataStore = new OnMemoryObjectiveDataStore(dataStore.findAllObjective());
+  }
+
+  createId(callback: (err: Error, id: Objective.Id) => void): void {
+    const num = Math.floor(Date.now() / 1000);
+    setTimeout(() => callback(null, Objective.Id.create(num)), 100);
   }
   
   findAll(): Objective.Entity[] {
-    if(!this.entities) {
-      this.entities = this.dataStore.findAllObjective();
-      this.entityMap = {};
-      this.entities.forEach(v => this.entityMap[v.id.value] = v);
-    }
-    return this.entities;
+    return this.onMemoryObjectiveDataStore.findAll();
   }
 
   findById(id: Objective.Id) {
-    return this.entityMap[id.value];
+    return this.onMemoryObjectiveDataStore.findById(id);
   }
 
   findUnder(rootId: Objective.Id) {
@@ -41,54 +44,149 @@ export class ObjectiveRepositoryImpl {
     return getChildren(rootId);
   }
 
+  update(entity: Objective.Entity, callback:(e)=>void) {
+    if(!this.onMemoryObjectiveDataStore.isExist(entity.id)) {
+      throw new Error(`entity not found: ${entity.id.value}`)
+    }
+    this.dataStore.isExist(entity.id, (e, v) => {
+      if(e) {
+        callback(e);
+        return;
+      }
+      if(!v) {
+        callback(new Error('entity not found: ' + entity.id.value));
+        return;
+      }
+      this.dataStore.update(entity, (e) => {
+        if(e) {
+          callback(e);
+          return;
+        }
+        this.onMemoryObjectiveDataStore.update(entity);
+        callback(null);
+      })
+    })
+  }
+
+  insert(entity: Objective.Entity, callback:(e)=>void) {
+    if(this.onMemoryObjectiveDataStore.isExist(entity.id)) {
+      throw new Error(`entity already exists: ${entity.id.value}`)
+    }
+    this.dataStore.isExist(entity.id, (e, v) => {
+      if(e) {
+        callback(e);
+        return;
+      }
+      if(v) {
+        throw new Error(`entity already exists: ${entity.id.value}`)
+        return;
+      }
+      this.dataStore.insert(entity, (e) => {
+        if(e) {
+          callback(e);
+          return;
+        }
+        this.onMemoryObjectiveDataStore.insert(entity);
+        callback(null);
+      })
+    })
+  }
+
+}
+export class OnMemoryObjectiveDataStore {
+  private entityMap: {[key:string]: Objective.Entity}
+
+  constructor(entities: Objective.Entity[]) {
+    this.entityMap = {};
+    entities.forEach(v => this.entityMap[v.id.value] = v);
+  }
+
+  findAll(): Objective.Entity[] {
+    return Object.keys(this.entityMap).map(key => this.entityMap[key]);
+  }
+
+  findById(id: Objective.Id) {
+    return this.entityMap[id.value];
+  }
+
+  isExist(id:Objective.Id) {
+    return this.entityMap[id.value] ? true : false;
+  }
+
+  update(entity: Objective.Entity) {
+    if(!this.isExist(entity.id)) {
+      throw new Error(`entity not found: ${entity.id.value}`)
+    }
+    this.entityMap[entity.id.value] = entity;
+    console.log('update onMemory');
+  }
+  insert(entity: Objective.Entity) {
+    if(this.isExist(entity.id)) {
+      throw new Error(`entity already exists: ${entity.id.value}`)
+    }
+    this.entityMap[entity.id.value] = entity;
+    console.log('insert onMemory');
+  }
 }
 
 export class DataStore {
   private callCount = 0;
+  private list: Objective.Entity[];
   findAllObjective(): Objective.Entity[] {
     if(this.callCount > 0) {
       throw '2回目の呼出です'
     }
-    var root = Objective.Entity.root();
-    var num = 1;
-    return [
-      root,
-      new Objective.Entity(
-        Objective.Id.create(1),
-        '大目標',
-        root.id
-      ),
-      new Objective.Entity(
-        Objective.Id.create(2),
-        '中目標1',
-        Objective.Id.create(1)
-      ),
-      new Objective.Entity(
-        Objective.Id.create(3),
-        '中目標2',
-        Objective.Id.create(1)
-      ),
-      new Objective.Entity(
-        Objective.Id.create(4),
-        '小目標1',
-        Objective.Id.create(2)
-      ),
-      new Objective.Entity(
-        Objective.Id.create(5),
-        '小目標2',
-        Objective.Id.create(2)
-      ),
-      new Objective.Entity(
-        Objective.Id.create(6),
-        '小目標3',
-        Objective.Id.create(3)
-      ),
-      new Objective.Entity(
-        Objective.Id.create(7),
-        '小目標4',
-        Objective.Id.create(3)
+    var raw = localStorage.getItem('objectiveTree');
+    if(!raw) {
+      raw = JSON.stringify([Objective.Entity.root()].map(v => v.toObject()));
+      localStorage.setItem('objectiveTree', raw);
+    }
+    console.log(raw);
+
+    this.list = JSON.parse(raw).map(v => {
+      return new Objective.Entity(
+        new Objective.Id(v.id),
+        v.title,
+        v.parent ? new Objective.Id(v.parent) : null,
+        new MetaData(v.metaData.description, v.metaData.members)
       )
-    ]
+    })
+
+    return this.list;
+  }
+
+  update(entity: Objective.Entity, callback: (err) => void) {
+    for(var i = 0; i < this.list.length; i++) {
+      if(this.list[i].id.value == entity.id.value) {
+        this.list[i] = entity;
+        this.save();
+        setTimeout(() => callback(null), 100)
+        return;
+      }
+    }
+    setTimeout(() => callback(new Error(`entity not found: ${entity.id.value}`)), 100)
+  }
+
+  insert(entity: Objective.Entity, callback: (err) => void) {
+    this.list.push(entity);
+    this.save();
+    callback(null);
+  }
+
+  isExist(id:Objective.Id, callback: (err, value: boolean) => void) {
+    for(var i = 0; i < this.list.length; i++) {
+      if(this.list[i].id.value == id.value) {
+        setTimeout(() => callback(null, true), 100)
+        return; 
+      }
+    }
+    setTimeout(() => callback(null, false), 100)
+  }
+
+  private save() {
+    const raw = JSON.stringify(this.list.map(v => v.toObject()));
+    console.log(raw);
+    localStorage.setItem('objectiveTree', raw);
   }
 
 }

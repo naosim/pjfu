@@ -9,13 +9,31 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/3.14.0/js-yaml.min.js" integrity="sha512-ia9gcZkLHA+lkNST5XlseHz/No5++YBneMsDp1IZRJSbi1YqQvBeskJuG1kR+PH1w7E0bFgEZegcj0EwpXQnww==" crossorigin="anonymous"></script>
-    <script>mermaid.initialize({startOnLoad:true});</script>
+    <script>mermaid.initialize({startOnLoad:false});</script>
     
     
   </head>
   <h1>プロジェクト譜</h1>
+  タイトル: <input id="rootIdSpan" value="O0" /><button id="applyRootIdButton">反映</button><br>
   <div id="profu" class="mermaid"></div>
+  <h3>編集</h3>
+  編集対象: <input id="targetId" /><button id="applyTargetIdButton">反映</button><br>
+  ID: <span id="idSpan"></span><br>
+  タイトル: <input id="titleInput" /><br>
+  上位: <input id="parentsInput" /><br>
+  <textarea id="detailTextArea"></textarea><br>
+  <button id="saveButton">更新</button><button id="insertButton">新規作成</button><br>
+  リンク<br>
+  アクション<br>
+  <button>サブ目標追加</button>
+  <button>施策追加</button>
 
   <script src="./js/index/htmlmain.js?v=1"></script>
+  <script>
+function callback1(hoge) {
+  console.log('callback1');
+  console.log(hoge);
+}
+  </script>
 </html>
 
