@@ -60,13 +60,31 @@ qclick('#applyTargetIdButton', () => {
   q('#detailTextArea').value = objective.metaData.description;
 })
 
+qclick('#createSubButton', () => {
+  q('#parentsInput').value = q('#idSpan').innerHTML;
+
+  q('#idSpan').innerHTML = '';
+  q('#titleInput').value = '';
+  q('#detailTextArea').value = '';
+})
+
 qclick('#saveButton', () => {
+  if(q('#idSpan').innerHTML.trim().length == 0) {
+    alert('ID未確定のため更新できません');
+    throw new Error('ID未確定のため更新できません');
+  }
   const newEntity = new Objective.Entity(
     new Objective.Id(q('#idSpan').innerHTML),
     q('#titleInput').value,
     new Objective.Id(q('#parentsInput').value),
     new MetaData(q('#detailTextArea').value, [])
   )
+
+  if(newEntity.id.value == newEntity.parent.value) {
+    alert('IDとparentが同一です');
+    throw new Error('IDとparentが同一です');
+  }
+
   objectiveRepository.update(newEntity, (e) => {
     console.log('callback');
     if(e) {
@@ -79,9 +97,6 @@ qclick('#saveButton', () => {
 })
 
 qclick('#insertButton', () => {
-  if(!confirm("新規作成します。よろしいですか？")) {
-    return;
-  }
   objectiveRepository.createId((err, id) => {
     const newEntity = new Objective.Entity(
       id,

@@ -531,8 +531,25 @@ try {
     q('#parentsInput').value = objective.parent.value;
     q('#detailTextArea').value = objective.metaData.description;
   });
+  qclick('#createSubButton', function () {
+    q('#parentsInput').value = q('#idSpan').innerHTML;
+    q('#idSpan').innerHTML = '';
+    q('#titleInput').value = '';
+    q('#detailTextArea').value = '';
+  });
   qclick('#saveButton', function () {
+    if (q('#idSpan').innerHTML.trim().length == 0) {
+      alert('ID未確定のため更新できません');
+      throw new Error('ID未確定のため更新できません');
+    }
+
     var newEntity = new domain_1.Objective.Entity(new domain_1.Objective.Id(q('#idSpan').innerHTML), q('#titleInput').value, new domain_1.Objective.Id(q('#parentsInput').value), new domain_1.MetaData(q('#detailTextArea').value, []));
+
+    if (newEntity.id.value == newEntity.parent.value) {
+      alert('IDとparentが同一です');
+      throw new Error('IDとparentが同一です');
+    }
+
     objectiveRepository_1.update(newEntity, function (e) {
       console.log('callback');
 
@@ -546,10 +563,6 @@ try {
     });
   });
   qclick('#insertButton', function () {
-    if (!confirm("新規作成します。よろしいですか？")) {
-      return;
-    }
-
     objectiveRepository_1.createId(function (err, id) {
       var newEntity = new domain_1.Objective.Entity(id, q('#titleInput').value, new domain_1.Objective.Id(q('#parentsInput').value), new domain_1.MetaData(q('#detailTextArea').value, []));
       objectiveRepository_1.insert(newEntity, function (e) {
