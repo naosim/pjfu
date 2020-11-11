@@ -821,7 +821,7 @@ try {
     return id[0] == 'A';
   };
 
-  qclick('#applyTargetIdButton', function () {
+  var applyTargetId_1 = function applyTargetId_1() {
     if (isObjectiveId_1(q('#targetId').value)) {
       var id = new domain_1.Objective.Id(q('#targetId').value);
       var objective = objectiveRepository_1.findById(id);
@@ -850,7 +850,9 @@ try {
       alert('未知のID');
       throw new Error('未知のID');
     }
-  });
+  };
+
+  qclick('#applyTargetIdButton', applyTargetId_1);
   qclick('#createSubButton', function () {
     q('#parentsInput').value = q('#idSpan').innerHTML;
     q('#idSpan').innerHTML = '';
@@ -929,13 +931,13 @@ try {
       });
     });
   });
+  window.addEventListener('hashchange', function (e) {
+    q('#targetId').value = window.location.hash.slice(1);
+    applyTargetId_1();
+  });
 } catch (e) {
   console.error(e);
 }
-
-window.addEventListener('hashchange', function (e) {
-  q('#targetId').value = window.location.hash.slice(1);
-});
 
 if (location.hash) {
   q('#targetId').value = window.location.hash.slice(1);

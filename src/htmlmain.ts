@@ -85,7 +85,7 @@ const setMetaDataToTextArea = (metaData: MetaData) => {
 const isObjectiveId = (id: string) => id[0] == 'O';
 const isActionId = (id: string) => id[0] == 'A';
 
-qclick('#applyTargetIdButton', () => {
+const applyTargetId = () => {
   if(isObjectiveId(q('#targetId').value)) {
     const id = new Objective.Id(q('#targetId').value);
     const objective = objectiveRepository.findById(id);
@@ -108,8 +108,9 @@ qclick('#applyTargetIdButton', () => {
     alert('未知のID');
     throw new Error('未知のID');
   }
-  
-})
+}
+
+qclick('#applyTargetIdButton', applyTargetId)
 
 qclick('#createSubButton', () => {
   q('#parentsInput').value = q('#idSpan').innerHTML;
@@ -201,13 +202,16 @@ qclick('#insertActionButton', () => {
   })
 })
 
+window.addEventListener('hashchange', (e) => {
+  q('#targetId').value = window.location.hash.slice(1);
+  applyTargetId();
+})
+
 } catch(e) {
   console.error(e);
 }
 
-window.addEventListener('hashchange', (e) => {
-  q('#targetId').value = window.location.hash.slice(1);
-})
+
 
 
 
