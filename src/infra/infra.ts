@@ -2,208 +2,27 @@ import {
   Link,
   MetaData,
   Objective,
-  Action,
-  EntityIf,
-  StringValueObject
-} from '../domain/domain'
+  Action} from '../domain/domain'
 
-export class ObjectiveRepositoryImpl {
-  private onMemoryObjectiveDataStore: OnMemoryDataStore<Objective.Id, Objective.Entity>
-  
-  constructor(private dataStore: DataStore) {
-    this.onMemoryObjectiveDataStore = new OnMemoryDataStore<Objective.Id, Objective.Entity>(dataStore.findAllObjective());
-  }
+export interface DataStore {
+  findAllObjective(): Objective.Entity[];
+  findAllAction(): Action.Entity[];
 
-  createId(callback: (err: Error, id: Objective.Id) => void): void {
-    const num = Math.floor(Date.now() / 1000);
-    setTimeout(() => callback(null, Objective.Id.create(num)), 100);
-  }
-  
-  findAll(): Objective.Entity[] {
-    return this.onMemoryObjectiveDataStore.findAll();
-  }
+  updateObjective(entity: Objective.Entity, callback: (err) => void);
+  updateAction(entity: Action.Entity, callback: (err) => void);
 
-  findById(id: Objective.Id) {
-    return this.onMemoryObjectiveDataStore.findById(id);
-  }
+  insertObjective(entity: Objective.Entity, callback: (err:Error) => void);
+  insertAction(entity: Action.Entity, callback: (err:Error) => void);
 
-  findUnder(rootId: Objective.Id) {
-    // 全体のツーリを作る
-    var map: {[key: string]: Objective.Id[]} = {}; //key:親, value: 子たち
-    this.findAll().filter(v => v.parent).forEach(v => {
-      if(!map[v.parent.value]) {
-        map[v.parent.value] = [];
-      }
-      map[v.parent.value].push(v.id);
-    })
-    var getChildren = (rootId: Objective.Id): Objective.Entity[] => {
-      var list = [this.findById(rootId)];
-      if(!map[rootId.value]) {
-        return list;
-      }
-      map[rootId.value].forEach(ch => getChildren(ch).forEach(v => list.push(v)))
-      return list;
-    }
-    
-    return getChildren(rootId);
-  }
+  isExistObjective(id:Objective.Id, callback: (err:Error, value: boolean) => void);
+  isExistAction(id:Action.Id, callback: (err:Error, value: boolean) => void);
 
-  update(entity: Objective.Entity, callback:(e)=>void) {
-    if(!this.onMemoryObjectiveDataStore.isExist(entity.id)) {
-      throw new Error(`entity not found: ${entity.id.value}`)
-    }
-    this.dataStore.isExistObjective(entity.id, (e, v) => {
-      if(e) {
-        callback(e);
-        return;
-      }
-      if(!v) {
-        callback(new Error('entity not found: ' + entity.id.value));
-        return;
-      }
-      this.dataStore.updateObjective(entity, (e) => {
-        if(e) {
-          callback(e);
-          return;
-        }
-        this.onMemoryObjectiveDataStore.update(entity);
-        callback(null);
-      })
-    })
-  }
-
-  insert(entity: Objective.Entity, callback:(e)=>void) {
-    if(this.onMemoryObjectiveDataStore.isExist(entity.id)) {
-      throw new Error(`entity already exists: ${entity.id.value}`)
-    }
-    this.dataStore.isExistObjective(entity.id, (e, v) => {
-      if(e) {
-        callback(e);
-        return;
-      }
-      if(v) {
-        throw new Error(`entity already exists: ${entity.id.value}`)
-        return;
-      }
-      this.dataStore.insertObjective(entity, (e) => {
-        if(e) {
-          callback(e);
-          return;
-        }
-        this.onMemoryObjectiveDataStore.insert(entity);
-        callback(null);
-      })
-    })
-  }
-}
-
-export class ActionRepositoryImpl {
-  private onMemoryObjectiveDataStore: OnMemoryDataStore<Action.Id, Action.Entity>
-  
-  constructor(private dataStore: DataStore) {
-    this.onMemoryObjectiveDataStore = new OnMemoryDataStore<Action.Id, Action.Entity>(dataStore.findAllAction());
-  }
-
-  createId(callback: (err: Error, id: Action.Id) => void): void {
-    const num = Math.floor(Date.now() / 1000);
-    setTimeout(() => callback(null, Action.Id.create(num)), 100);
-  }
-  
-  findAll(): Action.Entity[] {
-    return this.onMemoryObjectiveDataStore.findAll();
-  }
-
-  findById(id: Action.Id) {
-    return this.onMemoryObjectiveDataStore.findById(id);
-  }
-
-  update(entity: Action.Entity, callback:(e)=>void) {
-    if(!this.onMemoryObjectiveDataStore.isExist(entity.id)) {
-      throw new Error(`entity not found: ${entity.id.value}`)
-    }
-    this.dataStore.isExistAction(entity.id, (e, v) => {
-      if(e) {
-        callback(e);
-        return;
-      }
-      if(!v) {
-        callback(new Error('entity not found: ' + entity.id.value));
-        return;
-      }
-      this.dataStore.updateAction(entity, (e) => {
-        if(e) {
-          callback(e);
-          return;
-        }
-        this.onMemoryObjectiveDataStore.update(entity);
-        callback(null);
-      })
-    })
-  }
-
-  insert(entity: Action.Entity, callback:(e)=>void) {
-    if(this.onMemoryObjectiveDataStore.isExist(entity.id)) {
-      throw new Error(`entity already exists: ${entity.id.value}`)
-    }
-    this.dataStore.isExistAction(entity.id, (e, v) => {
-      if(e) {
-        callback(e);
-        return;
-      }
-      if(v) {
-        throw new Error(`entity already exists: ${entity.id.value}`)
-        return;
-      }
-      this.dataStore.insertAction (entity, (e) => {
-        if(e) {
-          callback(e);
-          return;
-        }
-        this.onMemoryObjectiveDataStore.insert(entity);
-        callback(null);
-      })
-    })
-  }
+  removeObjective(id: Objective.Id, callback: (err:Error) => void);
+  removeAction(id: Action.Id, callback: (err:Error) => void);
 }
 
 
-export class OnMemoryDataStore<I extends StringValueObject, E extends EntityIf<I>> {
-  private entityMap: {[key:string]: E}
-
-  constructor(entities: E[]) {
-    this.entityMap = {};
-    entities.forEach(v => this.entityMap[v.id.value] = v);
-  }
-
-  findAll(): E[] {
-    return Object.keys(this.entityMap).map(key => this.entityMap[key]);
-  }
-
-  findById(id: I): E {
-    return this.entityMap[id.value];
-  }
-
-  isExist(id:I) {
-    return this.entityMap[id.value] ? true : false;
-  }
-
-  update(entity: E) {
-    if(!this.isExist(entity.id)) {
-      throw new Error(`entity not found: ${entity.id.value}`)
-    }
-    this.entityMap[entity.id.value] = entity;
-    console.log('update onMemory');
-  }
-  insert(entity: E) {
-    if(this.isExist(entity.id)) {
-      throw new Error(`entity already exists: ${entity.id.value}`)
-    }
-    this.entityMap[entity.id.value] = entity;
-    console.log('insert onMemory');
-  }
-}
-
-export class DataStore {
+export class DataStoreImpl implements DataStore {
   private callCount = 0;
   private list: Objective.Entity[];
   private actions: Action.Entity[];
@@ -243,7 +62,7 @@ export class DataStore {
     }
     console.log(raw);
 
-    this.list = JSON.parse(raw).map(v => DataStore.dataToObjectiveEntity(v))
+    this.list = JSON.parse(raw).map(v => DataStoreImpl.dataToObjectiveEntity(v))
 
     return this.list;
   }
@@ -259,7 +78,7 @@ export class DataStore {
     }
     console.log(raw);
 
-    this.actions = JSON.parse(raw).map(v => DataStore.dataToActionEntity(v))
+    this.actions = JSON.parse(raw).map(v => DataStoreImpl.dataToActionEntity(v))
 
     return this.actions;
   }
@@ -288,19 +107,19 @@ export class DataStore {
     setTimeout(() => callback(new Error(`entity not found: ${entity.id.value}`)), 100)
   }
 
-  insertObjective(entity: Objective.Entity, callback: (err) => void) {
+  insertObjective(entity: Objective.Entity, callback: (err:Error) => void) {
     this.list.push(entity);
     this.saveObjective();
-    callback(null);
+    setTimeout(() => callback(null), 100);
   }
 
-  insertAction(entity: Action.Entity, callback: (err) => void) {
+  insertAction(entity: Action.Entity, callback: (err:Error) => void) {
     this.actions.push(entity);
     this.saveAction();
-    callback(null);
+    setTimeout(() => callback(null), 100);
   }
 
-  isExistObjective(id:Objective.Id, callback: (err, value: boolean) => void) {
+  isExistObjective(id:Objective.Id, callback: (err:Error, value: boolean) => void) {
     for(var i = 0; i < this.list.length; i++) {
       if(this.list[i].id.value == id.value) {
         setTimeout(() => callback(null, true), 100)
@@ -310,7 +129,7 @@ export class DataStore {
     setTimeout(() => callback(null, false), 100)
   }
 
-  isExistAction(id:Action.Id, callback: (err, value: boolean) => void) {
+  isExistAction(id:Action.Id, callback: (err:Error, value: boolean) => void) {
     for(var i = 0; i < this.actions.length; i++) {
       if(this.actions[i].id.value == id.value) {
         setTimeout(() => callback(null, true), 100)
@@ -318,6 +137,18 @@ export class DataStore {
       }
     }
     setTimeout(() => callback(null, false), 100)
+  }
+
+  removeObjective(id: Objective.Id, callback: (err:Error) => void) {
+    this.list = this.list.filter(v => !v.id.eq(id))
+    this.saveObjective();
+    setTimeout(() => callback(null), 100);
+  }
+
+  removeAction(id: Action.Id, callback: (err:Error) => void) {
+    this.actions = this.actions.filter(v => !v.id.eq(id))
+    this.saveAction();
+    setTimeout(() => callback(null), 100);
   }
 
   private saveObjective() {

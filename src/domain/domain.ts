@@ -53,6 +53,9 @@ export module Objective {
       if(id.eq(parent)) {
         throw new Error('IDとparentが同一です');
       }
+      if(!title || title.trim().length == 0) {
+        throw new Error('タイトルが空です');
+      }
     }
 
     toObject() {
@@ -74,6 +77,7 @@ export module Objective {
     }
   }
   export class Id implements StringValueObject {
+    private _class = 'Objective.Id'
     constructor(
       readonly value: string
     ){}
@@ -102,6 +106,9 @@ export module Action {
       readonly parents: Objective.Id[],
       readonly metaData: MetaData
     ) {
+      if(!title || title.trim().length == 0) {
+        throw new Error('タイトルが空です');
+      }
     }
     toObject() {
       return {

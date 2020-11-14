@@ -2,13 +2,16 @@ import {
   Link, 
   MetaData, 
   StringValueObject,
-  Objective, Action} from './domain/domain'
+  Objective, 
+  Action
+} from './domain/domain'
 
 import {
-  ObjectiveRepositoryImpl,
-  ActionRepositoryImpl,
-  DataStore
+  DataStoreImpl
 } from './infra/infra'
+import { DataStore } from "./infra/DataStore";
+import { ActionRepositoryImpl } from "./infra/ActionRepositoryImpl";
+import { ObjectiveRepositoryImpl } from "./infra/ObjectiveRepositoryImpl";
 declare const mermaid: any;
 function q(selector) {
   return document.querySelector(selector);
@@ -39,7 +42,7 @@ ${actionLinkText}
 ${actionArrowText}
   `.trim()
 }
-const dataStore = new DataStore();
+const dataStore: DataStore = new DataStoreImpl();
 const objectiveRepository = new ObjectiveRepositoryImpl(dataStore)
 const actionRepository = new ActionRepositoryImpl(dataStore)
 
@@ -158,8 +161,6 @@ qclick('#saveButton', () => {
     alert('未知のID');
     throw new Error('未知のID');
   }
-
-  
 })
 
 qclick('#insertButton', () => {
@@ -202,6 +203,39 @@ qclick('#insertActionButton', () => {
   })
 })
 
+qclick('#removeButton', () => {
+  const idInHtml = q('#idSpan').innerHTML.trim();
+  if(isObjectiveId(idInHtml)) {// 目標削除
+    const objectiveId = new Objective.Id(idInHtml);
+    if(actionRepository.hasChildren(objectiveId)) {
+      alert('子要素を消してください');
+      throw new Error('子要素を消してください');
+    }
+    objectiveRepository.remove(
+      objectiveId,
+      (e) => {
+        if(e) {
+          alert(e.message);
+          throw e;
+        }
+        onTreeUpdate();
+      }
+    )
+    
+  } else if(isActionId(idInHtml)) {// 施策削除
+    actionRepository.remove(
+      new Action.Id(idInHtml),
+      (e) => {
+        if(e) {
+          alert(e.message);
+          throw e;
+        }
+        onTreeUpdate();
+      }
+    )
+  }
+})
+
 window.addEventListener('hashchange', (e) => {
   q('#targetId').value = window.location.hash.slice(1);
   applyTargetId();
@@ -210,10 +244,6 @@ window.addEventListener('hashchange', (e) => {
 } catch(e) {
   console.error(e);
 }
-
-
-
-
 
 if(location.hash) {
   q('#targetId').value = window.location.hash.slice(1);
@@ -262,9 +292,6 @@ function textToObj(text) {
       }, [])
     }
     memo[key] = value;
-
-
-
     return memo;
   }, {})
 }
