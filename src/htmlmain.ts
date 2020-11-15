@@ -1,7 +1,6 @@
 import {
   Link, 
   MetaData, 
-  StringValueObject,
   Objective, 
   Action
 } from './domain/domain'
@@ -45,14 +44,41 @@ ${actionArrowText}
 const dataStore: DataStore = new DataStoreImpl();
 const objectiveRepository = new ObjectiveRepositoryImpl(dataStore)
 const actionRepository = new ActionRepositoryImpl(dataStore)
+const isObjectiveId = (id: string) => id[0] == 'O';
+const isActionId = (id: string) => id[0] == 'A';
 
 const onTreeUpdate = () => {
-  const treeRootId = new Objective.Id(q('#rootIdSpan').value);
+  const idInHtml = q('#rootIdSpan').value;
+  const objectiveMap: { [key: string]: Objective.Entity } = {}
+  const actionMap: { [key: string]: Action.Entity } = {}
+  var objectives: Objective.Entity[] = [];
+  var parents: Objective.Id[] = null;
+  if(isObjectiveId(idInHtml)) {
+    parents = [new Objective.Id(idInHtml)]
+  } else if(isActionId(idInHtml)) {
+    const current: Action.Entity = actionRepository.findById(new Action.Id(idInHtml));
+    parents = current.parents;
+    parents.forEach(p => {
+      actionRepository.findChildren(p).forEach(v => {
+        actionMap[v.id.value] = v;
+      })
+    })
+  } else {
+    alert('未知のID');
+    throw new Error('未知のID');
+  }
+  parents.forEach(p => {
+    var underObjectives = objectiveRepository.findUnder(p);
+    underObjectives.forEach(v => {
+      objectiveMap[v.id.value] = v;
+      actionRepository.findChildren(v.id).forEach(v => {
+        actionMap[v.id.value] = v;
+      })
+    });
+    objectiveRepository.findParentsTree(p).forEach(v => objectiveMap[v.id.value] = v);
+  })
   var element = document.querySelector("#profu");
-  console.log(objectiveRepository.findAll());
-  const entities = objectiveRepository.findUnder(treeRootId)
-  const actions = actionRepository.findAll()
-  var text = toMermaid(entities, actions);
+  var text = toMermaid(Object.values(objectiveMap), Object.values(actionMap));
   console.log(text);
   mermaid.mermaidAPI.render('graphDiv', text, (svg) => element.innerHTML = svg);
 }
@@ -85,8 +111,6 @@ const setMetaDataToTextArea = (metaData: MetaData) => {
   ].join('\n');
 }
 
-const isObjectiveId = (id: string) => id[0] == 'O';
-const isActionId = (id: string) => id[0] == 'A';
 
 const applyTargetId = () => {
   if(isObjectiveId(q('#targetId').value)) {

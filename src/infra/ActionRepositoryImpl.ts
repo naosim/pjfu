@@ -36,6 +36,10 @@ export class ActionRepositoryImpl {
     return this.parentMap[parentId.value] ? true : false;
   }
 
+  findChildren(parentId: Objective.Id): Action.Entity[] {
+    return (this.parentMap[parentId.value] || []).map(id => this.findById(id));
+  }
+
   private onUpdate() {
     this.parentMap = {}
     this.findAll().forEach(v => {

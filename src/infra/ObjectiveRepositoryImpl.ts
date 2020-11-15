@@ -25,6 +25,28 @@ export class ObjectiveRepositoryImpl {
     return this.inMemoryObjectiveDataStore.findById(id);
   }
 
+  findParentsTree(rootId: Objective.Id): Objective.Entity[] {
+    const parentTrunkList: Objective.Id[] = [];
+    const findParentTrunk = (id: Objective.Id) => {
+      parentTrunkList.push(id);
+      const entity = this.findById(id);
+      if(entity.isNotRoot) {
+        findParentTrunk(entity.parent)
+      }
+    };
+    var current = this.findById(rootId);
+    if(current.isRoot) {
+      return [];
+    }
+    findParentTrunk(current.parent);
+    var result: Objective.Entity[] = [];
+    parentTrunkList.forEach(p => {
+      this.parentMap[p.value].forEach(v => result.push(this.findById(v)));
+    })
+    result.push(this.findById(parentTrunkList[parentTrunkList.length - 1]))
+    return result;
+  }
+
   findUnder(rootId: Objective.Id) {
     var getChildren = (rootId: Objective.Id): Objective.Entity[] => {
       var list = [this.findById(rootId)];

@@ -596,6 +596,14 @@ function () {
     return this.parentMap[parentId.value] ? true : false;
   };
 
+  ActionRepositoryImpl.prototype.findChildren = function (parentId) {
+    var _this = this;
+
+    return (this.parentMap[parentId.value] || []).map(function (id) {
+      return _this.findById(id);
+    });
+  };
+
   ActionRepositoryImpl.prototype.onUpdate = function () {
     var _this = this;
 
@@ -762,6 +770,38 @@ function () {
 
   ObjectiveRepositoryImpl.prototype.findById = function (id) {
     return this.inMemoryObjectiveDataStore.findById(id);
+  };
+
+  ObjectiveRepositoryImpl.prototype.findParentsTree = function (rootId) {
+    var _this = this;
+
+    var parentTrunkList = [];
+
+    var findParentTrunk = function findParentTrunk(id) {
+      parentTrunkList.push(id);
+
+      var entity = _this.findById(id);
+
+      if (entity.isNotRoot) {
+        findParentTrunk(entity.parent);
+      }
+    };
+
+    var current = this.findById(rootId);
+
+    if (current.isRoot) {
+      return [];
+    }
+
+    findParentTrunk(current.parent);
+    var result = [];
+    parentTrunkList.forEach(function (p) {
+      _this.parentMap[p.value].forEach(function (v) {
+        return result.push(_this.findById(v));
+      });
+    });
+    result.push(this.findById(parentTrunkList[parentTrunkList.length - 1]));
+    return result;
   };
 
   ObjectiveRepositoryImpl.prototype.findUnder = function (rootId) {
@@ -972,13 +1012,50 @@ try {
   var objectiveRepository_1 = new ObjectiveRepositoryImpl_1.ObjectiveRepositoryImpl(dataStore);
   var actionRepository_1 = new ActionRepositoryImpl_1.ActionRepositoryImpl(dataStore);
 
+  var isObjectiveId_1 = function isObjectiveId_1(id) {
+    return id[0] == 'O';
+  };
+
+  var isActionId_1 = function isActionId_1(id) {
+    return id[0] == 'A';
+  };
+
   var onTreeUpdate_1 = function onTreeUpdate_1() {
-    var treeRootId = new domain_1.Objective.Id(q('#rootIdSpan').value);
+    var idInHtml = q('#rootIdSpan').value;
+    var objectiveMap = {};
+    var actionMap = {};
+    var objectives = [];
+    var parents = null;
+
+    if (isObjectiveId_1(idInHtml)) {
+      parents = [new domain_1.Objective.Id(idInHtml)];
+    } else if (isActionId_1(idInHtml)) {
+      var current = actionRepository_1.findById(new domain_1.Action.Id(idInHtml));
+      parents = current.parents;
+      parents.forEach(function (p) {
+        actionRepository_1.findChildren(p).forEach(function (v) {
+          actionMap[v.id.value] = v;
+        });
+      });
+    } else {
+      alert('未知のID');
+      throw new Error('未知のID');
+    }
+
+    parents.forEach(function (p) {
+      var underObjectives = objectiveRepository_1.findUnder(p);
+      underObjectives.forEach(function (v) {
+        objectiveMap[v.id.value] = v;
+        actionRepository_1.findChildren(v.id).forEach(function (v) {
+          actionMap[v.id.value] = v;
+        });
+      });
+      objectiveRepository_1.findParentsTree(p).forEach(function (v) {
+        return objectiveMap[v.id.value] = v;
+      });
+    });
     var element = document.querySelector("#profu");
-    console.log(objectiveRepository_1.findAll());
-    var entities = objectiveRepository_1.findUnder(treeRootId);
-    var actions = actionRepository_1.findAll();
-    var text = toMermaid_1(entities, actions);
+    var text = toMermaid_1(Object.values(objectiveMap), Object.values(actionMap));
     console.log(text);
     mermaid.mermaidAPI.render('graphDiv', text, function (svg) {
       return element.innerHTML = svg;
@@ -1010,14 +1087,6 @@ try {
     q('#detailTextArea').value = ['# 説明: \n' + metaData.description, '', '# 担当: ' + metaData.members.join(', '), '# リンク: \n' + metaData.links.map(function (v) {
       return "- [" + v.name + "](" + v.path + ")";
     })].join('\n');
-  };
-
-  var isObjectiveId_1 = function isObjectiveId_1(id) {
-    return id[0] == 'O';
-  };
-
-  var isActionId_1 = function isActionId_1(id) {
-    return id[0] == 'A';
   };
 
   var applyTargetId_1 = function applyTargetId_1() {
