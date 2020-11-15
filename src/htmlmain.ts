@@ -55,14 +55,14 @@ dataStore.findAll((err, objectives, actions) => {
     mermaidTreeView.update();
   })
 
-  qclick('#createSubButton', () => {
-    q('#parentsInput').value = q('#idSpan').innerHTML;
+  // qclick('#createSubButton', () => {
+  //   q('#parentsInput').value = q('#idSpan').innerHTML;
   
-    q('#idSpan').innerHTML = '';
-    q('#titleInput').value = '';
-    // setMetaDataToTextArea(MetaData.empty());
-    q('#detailTextArea').value = MetaDataConverter.toText(MetaData.empty());
-  })
+  //   q('#idSpan').innerHTML = '';
+  //   q('#titleInput').value = '';
+  //   // setMetaDataToTextArea(MetaData.empty());
+  //   q('#detailTextArea').value = MetaDataConverter.toText(MetaData.empty());
+  // })
   
   qclick('#insertButton', () => {
     objectiveRepository.createId((err, id) => {

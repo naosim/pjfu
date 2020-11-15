@@ -484,7 +484,7 @@ exports.AnyId = AnyId;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.PjfuVue = exports.MermaidTreeView = void 0;
+exports.PjfuVue = exports.ParentsForm = exports.MermaidTreeView = void 0;
 
 var domain_1 = require("../domain/domain");
 
@@ -552,6 +552,30 @@ function () {
 
 exports.MermaidTreeView = MermaidTreeView;
 
+var ParentsForm =
+/** @class */
+function () {
+  function ParentsForm() {
+    this.value = '';
+  }
+
+  ParentsForm.prototype.set = function (parents) {
+    this.value = parents.map(function (v) {
+      return v.value;
+    }).join(', ');
+  };
+
+  ParentsForm.prototype.get = function () {
+    return this.value.split(',').map(function (v) {
+      return new domain_1.Objective.Id(v.trim());
+    });
+  };
+
+  return ParentsForm;
+}();
+
+exports.ParentsForm = ParentsForm;
+
 var PjfuVue =
 /** @class */
 function () {
@@ -566,7 +590,7 @@ function () {
       editForm: {
         id: '',
         title: '',
-        parents: [''],
+        parents: new ParentsForm(),
         detail: new MetaDataConverter_1.MetaDataForm(),
         links: [{
           name: '',
@@ -590,6 +614,9 @@ function () {
           },
           onClickUpdateButton: function onClickUpdateButton() {
             return _this.update();
+          },
+          onClickSubButton: function onClickSubButton() {
+            return _this.createSub();
           }
         }
       });
@@ -612,7 +639,8 @@ function () {
       _this.data.editTargetId = objective.id.value;
       _this.data.editForm.id = objective.id.value;
       _this.data.editForm.title = objective.title;
-      _this.data.editForm.parents = [objective.isNotRoot ? objective.parent.value : ''];
+
+      _this.data.editForm.parents.set(objective.isNotRoot ? [objective.parent] : []);
 
       _this.data.editForm.detail.set(objective.metaData);
 
@@ -628,9 +656,8 @@ function () {
       _this.data.editTargetId = action.id.value;
       _this.data.editForm.id = action.id.value;
       _this.data.editForm.title = action.title;
-      _this.data.editForm.parents = action.parents.map(function (v) {
-        return v.value;
-      });
+
+      _this.data.editForm.parents.set(action.parents);
 
       _this.data.editForm.detail.set(action.metaData);
 
@@ -665,18 +692,21 @@ function () {
     }
 
     anyId.forEach(function (id) {
-      var newEntity = new domain_1.Objective.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.map(function (v) {
-        return new domain_1.Objective.Id(v);
-      })[0], _this.data.editForm.detail.get());
+      var newEntity = new domain_1.Objective.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get()[0], _this.data.editForm.detail.get());
 
       _this.objectiveRepository.update(newEntity, callbackOnSaved);
     }, function (id) {
-      var newEntity = new domain_1.Action.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.map(function (v) {
-        return new domain_1.Objective.Id(v);
-      }), _this.data.editForm.detail.get());
+      var newEntity = new domain_1.Action.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get(), _this.data.editForm.detail.get());
 
       _this.actionRepository.update(newEntity, callbackOnSaved);
     });
+  };
+
+  PjfuVue.prototype.createSub = function () {
+    this.data.editForm.parents.set([new domain_1.Objective.Id(this.data.editForm.id)]);
+    this.data.editForm.id = '';
+    this.data.editForm.title = '';
+    this.data.editForm.detail.set(domain_1.MetaData.empty());
   };
 
   return PjfuVue;
@@ -1304,14 +1334,14 @@ dataStore.findAll(function (err, objectives, actions) {
   mermaidTreeView.update();
   qclick('#applyRootIdButton', function () {
     mermaidTreeView.update();
-  });
-  qclick('#createSubButton', function () {
-    q('#parentsInput').value = q('#idSpan').innerHTML;
-    q('#idSpan').innerHTML = '';
-    q('#titleInput').value = ''; // setMetaDataToTextArea(MetaData.empty());
+  }); // qclick('#createSubButton', () => {
+  //   q('#parentsInput').value = q('#idSpan').innerHTML;
+  //   q('#idSpan').innerHTML = '';
+  //   q('#titleInput').value = '';
+  //   // setMetaDataToTextArea(MetaData.empty());
+  //   q('#detailTextArea').value = MetaDataConverter.toText(MetaData.empty());
+  // })
 
-    q('#detailTextArea').value = MetaDataConverter_1.MetaDataConverter.toText(domain_1.MetaData.empty());
-  });
   qclick('#insertButton', function () {
     objectiveRepository.createId(function (err, id) {
       var newEntity = new domain_1.Objective.Entity(id, q('#titleInput').value, new domain_1.Objective.Id(q('#parentsInput').value), MetaDataConverter_1.MetaDataConverter.toMetaData(q('#detailTextArea').value));

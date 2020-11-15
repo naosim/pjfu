@@ -1,4 +1,4 @@
-import { Action, Objective } from '../domain/domain';
+import { Action, MetaData, Objective } from '../domain/domain';
 import { MermaidConvertor } from '../MermaidConvertor';
 import { MetaDataConverter, MetaDataForm } from '../MetaDataConverter';
 import { ActionRepositoryImpl } from './ActionRepositoryImpl';
@@ -53,6 +53,16 @@ export class MermaidTreeView {
   }
 }
 
+export class ParentsForm {
+  value = '';
+  set(parents: Objective.Id[]) {
+    this.value = parents.map(v => v.value).join(', ');
+  }
+  get(): Objective.Id[] {
+    return this.value.split(',').map(v => new Objective.Id(v.trim()));
+  }
+}
+
 export class PjfuVue { 
   private app: any;
   private data: {
@@ -62,7 +72,7 @@ export class PjfuVue {
     editForm: {
       id: string;
       title: string;
-      parents: string[];
+      parents: ParentsForm;
       detail: MetaDataForm;
       links: { name: string; path: string; }[];
     };
@@ -73,7 +83,7 @@ export class PjfuVue {
       editForm: {
         id: '',
         title: '',
-        parents: [''],
+        parents: new ParentsForm(),
         detail: new MetaDataForm(),
         links: [{ name: '', path: '' }]
       }
@@ -94,7 +104,8 @@ export class PjfuVue {
       data: this.data,
       methods: {
         onClickApplyRootIdButton: () => this.applyTreeId(),
-        onClickUpdateButton: () => this.update()
+        onClickUpdateButton: () => this.update(),
+        onClickSubButton: () => this.createSub(),
       }
     });
     } catch(e) {
@@ -113,7 +124,7 @@ export class PjfuVue {
         this.data.editTargetId = objective.id.value;
         this.data.editForm.id = objective.id.value;
         this.data.editForm.title = objective.title;
-        this.data.editForm.parents = [objective.isNotRoot ? objective.parent.value : ''];
+        this.data.editForm.parents.set(objective.isNotRoot ? [objective.parent] : [])
         this.data.editForm.detail.set(objective.metaData)
         this.data.editForm.links = objective.metaData.links.map(v => ({name: v.name, path: v.path}))
       },
@@ -122,7 +133,7 @@ export class PjfuVue {
         this.data.editTargetId = action.id.value;
         this.data.editForm.id = action.id.value;
         this.data.editForm.title = action.title;
-        this.data.editForm.parents = action.parents.map(v => v.value);
+        this.data.editForm.parents.set(action.parents);
         this.data.editForm.detail.set(action.metaData)
         this.data.editForm.links = action.metaData.links.map(v => ({name: v.name, path: v.path}))
       }
@@ -148,7 +159,7 @@ export class PjfuVue {
         const newEntity = new Objective.Entity(
           id,
           this.data.editForm.title,
-          this.data.editForm.parents.map(v => new Objective.Id(v))[0],
+          this.data.editForm.parents.get()[0],
           this.data.editForm.detail.get()
         )
         this.objectiveRepository.update(newEntity, callbackOnSaved);
@@ -157,11 +168,18 @@ export class PjfuVue {
         const newEntity = new Action.Entity(
           id,
           this.data.editForm.title,
-          this.data.editForm.parents.map(v => new Objective.Id(v)),
+          this.data.editForm.parents.get(),
           this.data.editForm.detail.get()
         )
         this.actionRepository.update(newEntity, callbackOnSaved);
       }
     )
+  }
+
+  createSub() {
+    this.data.editForm.parents.set([new Objective.Id(this.data.editForm.id)])
+    this.data.editForm.id = '';
+    this.data.editForm.title = ''
+    this.data.editForm.detail.set(MetaData.empty());
   }
 }
