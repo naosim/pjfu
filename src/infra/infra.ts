@@ -34,7 +34,23 @@ export class DataStoreImpl implements DataStore {
     )
   }
 
-  findAllObjective(): Objective.Entity[] {
+  findAll(callback: (err: Error, objectives: Objective.Entity[], actions: Action.Entity[]) => void) {
+    this.findAllObjective((err, objectives) => {
+      if(err) {
+        callback(err, null, null);
+        return;
+      }
+      this.findAllAction((err, actions) => {
+        if(err) {
+          callback(err, null, null);
+          return;
+        }
+        setTimeout(() => callback(null, objectives, actions), 100);
+      })
+    })
+  }
+
+  private findAllObjective(callback: (err: Error, entities: Objective.Entity[]) => void): void {
     if(this.callCount > 0) {
       throw '2回目の呼出です'
     }
@@ -46,11 +62,10 @@ export class DataStoreImpl implements DataStore {
     console.log(raw);
 
     this.list = JSON.parse(raw).map(v => DataStoreImpl.dataToObjectiveEntity(v))
-
-    return this.list;
+    setTimeout(() => callback(null, this.list), 100);
   }
 
-  findAllAction(): Action.Entity[] {
+  private findAllAction(callback: (err: Error, entities: Action.Entity[]) => void): void {
     if(this.callCount > 0) {
       throw '2回目の呼出です'
     }
@@ -63,7 +78,7 @@ export class DataStoreImpl implements DataStore {
 
     this.actions = JSON.parse(raw).map(v => DataStoreImpl.dataToActionEntity(v))
 
-    return this.actions;
+    setTimeout(() => callback(null, this.actions), 100);
   }
 
   updateObjective(entity: Objective.Entity, callback: (err) => void) {
@@ -100,26 +115,6 @@ export class DataStoreImpl implements DataStore {
     this.actions.push(entity);
     this.saveAction();
     setTimeout(() => callback(null), 100);
-  }
-
-  isExistObjective(id:Objective.Id, callback: (err:Error, value: boolean) => void) {
-    for(var i = 0; i < this.list.length; i++) {
-      if(this.list[i].id.value == id.value) {
-        setTimeout(() => callback(null, true), 100)
-        return; 
-      }
-    }
-    setTimeout(() => callback(null, false), 100)
-  }
-
-  isExistAction(id:Action.Id, callback: (err:Error, value: boolean) => void) {
-    for(var i = 0; i < this.actions.length; i++) {
-      if(this.actions[i].id.value == id.value) {
-        setTimeout(() => callback(null, true), 100)
-        return; 
-      }
-    }
-    setTimeout(() => callback(null, false), 100)
   }
 
   removeObjective(id: Objective.Id, callback: (err:Error) => void) {

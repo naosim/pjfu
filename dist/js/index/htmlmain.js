@@ -327,7 +327,31 @@ function () {
     }) : []));
   };
 
-  DataStoreImpl.prototype.findAllObjective = function () {
+  DataStoreImpl.prototype.findAll = function (callback) {
+    var _this = this;
+
+    this.findAllObjective(function (err, objectives) {
+      if (err) {
+        callback(err, null, null);
+        return;
+      }
+
+      _this.findAllAction(function (err, actions) {
+        if (err) {
+          callback(err, null, null);
+          return;
+        }
+
+        setTimeout(function () {
+          return callback(null, objectives, actions);
+        }, 100);
+      });
+    });
+  };
+
+  DataStoreImpl.prototype.findAllObjective = function (callback) {
+    var _this = this;
+
     if (this.callCount > 0) {
       throw '2回目の呼出です';
     }
@@ -345,10 +369,14 @@ function () {
     this.list = JSON.parse(raw).map(function (v) {
       return DataStoreImpl.dataToObjectiveEntity(v);
     });
-    return this.list;
+    setTimeout(function () {
+      return callback(null, _this.list);
+    }, 100);
   };
 
-  DataStoreImpl.prototype.findAllAction = function () {
+  DataStoreImpl.prototype.findAllAction = function (callback) {
+    var _this = this;
+
     if (this.callCount > 0) {
       throw '2回目の呼出です';
     }
@@ -364,7 +392,9 @@ function () {
     this.actions = JSON.parse(raw).map(function (v) {
       return DataStoreImpl.dataToActionEntity(v);
     });
-    return this.actions;
+    setTimeout(function () {
+      return callback(null, _this.actions);
+    }, 100);
   };
 
   DataStoreImpl.prototype.updateObjective = function (entity, callback) {
@@ -414,36 +444,6 @@ function () {
     this.saveAction();
     setTimeout(function () {
       return callback(null);
-    }, 100);
-  };
-
-  DataStoreImpl.prototype.isExistObjective = function (id, callback) {
-    for (var i = 0; i < this.list.length; i++) {
-      if (this.list[i].id.value == id.value) {
-        setTimeout(function () {
-          return callback(null, true);
-        }, 100);
-        return;
-      }
-    }
-
-    setTimeout(function () {
-      return callback(null, false);
-    }, 100);
-  };
-
-  DataStoreImpl.prototype.isExistAction = function (id, callback) {
-    for (var i = 0; i < this.actions.length; i++) {
-      if (this.actions[i].id.value == id.value) {
-        setTimeout(function () {
-          return callback(null, true);
-        }, 100);
-        return;
-      }
-    }
-
-    setTimeout(function () {
-      return callback(null, false);
     }, 100);
   };
 
@@ -564,11 +564,11 @@ var InMemoryDataStore_1 = require("./InMemoryDataStore");
 var ActionRepositoryImpl =
 /** @class */
 function () {
-  function ActionRepositoryImpl(dataStore) {
+  function ActionRepositoryImpl(dataStore, actions) {
     this.dataStore = dataStore;
     this.parentMap = {}; //key:親, value: 子たち
 
-    this.inMemoryActionDataStore = new InMemoryDataStore_1.InMemoryDataStore(dataStore.findAllAction());
+    this.inMemoryActionDataStore = new InMemoryDataStore_1.InMemoryDataStore(actions);
     this.onUpdate();
   }
 
@@ -619,24 +619,6 @@ function () {
     });
   };
 
-  ActionRepositoryImpl.prototype.isExist = function (id, callback) {
-    this.dataStore.isExistAction(id, function (e, v) {});
-    var inMemoryResult = this.inMemoryActionDataStore.isExist(id);
-    this.dataStore.isExistAction(id, function (e, v) {
-      if (e) {
-        callback(e, null);
-        return;
-      }
-
-      if (inMemoryResult != v) {
-        callback(new Error("different result: " + id.value + ", inmemoy " + inMemoryResult + ", server " + v), null);
-        return;
-      }
-
-      callback(null, inMemoryResult);
-    });
-  };
-
   ActionRepositoryImpl.prototype.update = function (entity, callback) {
     var _this = this;
 
@@ -644,27 +626,15 @@ function () {
       throw new Error("entity not found: " + entity.id.value);
     }
 
-    this.dataStore.isExistAction(entity.id, function (e, v) {
+    this.dataStore.updateAction(entity, function (e) {
       if (e) {
         callback(e);
         return;
       }
 
-      if (!v) {
-        callback(new Error('entity not found: ' + entity.id.value));
-        return;
-      }
+      _this.inMemoryActionDataStore.update(entity);
 
-      _this.dataStore.updateAction(entity, function (e) {
-        if (e) {
-          callback(e);
-          return;
-        }
-
-        _this.inMemoryActionDataStore.update(entity);
-
-        callback(null);
-      });
+      callback(null);
     });
   };
 
@@ -675,58 +645,38 @@ function () {
       throw new Error("entity already exists: " + entity.id.value);
     }
 
-    this.dataStore.isExistAction(entity.id, function (e, v) {
+    this.dataStore.insertAction(entity, function (e) {
       if (e) {
         callback(e);
         return;
       }
 
-      if (v) {
-        throw new Error("entity already exists: " + entity.id.value);
-        return;
-      }
+      _this.inMemoryActionDataStore.insert(entity);
 
-      _this.dataStore.insertAction(entity, function (e) {
-        if (e) {
-          callback(e);
-          return;
-        }
+      _this.onUpdate();
 
-        _this.inMemoryActionDataStore.insert(entity);
-
-        _this.onUpdate();
-
-        callback(null);
-      });
+      callback(null);
     });
   };
 
   ActionRepositoryImpl.prototype.remove = function (id, callback) {
     var _this = this;
 
-    this.isExist(id, function (e, v) {
+    if (!this.inMemoryActionDataStore.isExist(id)) {
+      throw new Error("entity not found: " + id.value);
+    }
+
+    this.dataStore.removeAction(id, function (e) {
       if (e) {
         callback(e);
         return;
       }
 
-      if (!v) {
-        callback(new Error('entity not found: ' + id.value));
-        return;
-      }
+      _this.inMemoryActionDataStore.remove(id);
 
-      _this.dataStore.removeAction(id, function (e) {
-        if (e) {
-          callback(e);
-          return;
-        }
+      _this.onUpdate();
 
-        _this.inMemoryActionDataStore.remove(id);
-
-        _this.onUpdate();
-
-        callback(null);
-      });
+      callback(null);
     });
   };
 
@@ -749,11 +699,11 @@ var InMemoryDataStore_1 = require("./InMemoryDataStore");
 var ObjectiveRepositoryImpl =
 /** @class */
 function () {
-  function ObjectiveRepositoryImpl(dataStore) {
+  function ObjectiveRepositoryImpl(dataStore, objectives) {
     this.dataStore = dataStore;
     this.parentMap = {}; //key:親, value: 子たち
 
-    this.inMemoryObjectiveDataStore = new InMemoryDataStore_1.InMemoryDataStore(dataStore.findAllObjective());
+    this.inMemoryObjectiveDataStore = new InMemoryDataStore_1.InMemoryDataStore(objectives);
     this.onUpdate();
   }
 
@@ -841,79 +791,47 @@ function () {
     });
   };
 
-  ObjectiveRepositoryImpl.prototype.isExist = function (id, callback) {
-    this.dataStore.isExistObjective(id, function (e, v) {});
-    var inMemoryResult = this.inMemoryObjectiveDataStore.isExist(id);
-    this.dataStore.isExistObjective(id, function (e, v) {
-      if (e) {
-        callback(e, null);
-        return;
-      }
-
-      if (inMemoryResult != v) {
-        callback(new Error("different result: " + id.value + ", inmemoy " + inMemoryResult + ", server " + v), null);
-        return;
-      }
-
-      callback(null, inMemoryResult);
-    });
-  };
-
   ObjectiveRepositoryImpl.prototype.update = function (entity, callback) {
     var _this = this;
 
-    this.isExist(entity.id, function (e, v) {
+    if (!this.inMemoryObjectiveDataStore.isExist(entity.id)) {
+      callback(new Error('entity not found: ' + entity.id.value));
+      return;
+    }
+
+    this.dataStore.updateObjective(entity, function (e) {
       if (e) {
         callback(e);
         return;
       }
 
-      if (!v) {
-        callback(new Error('entity not found: ' + entity.id.value));
-        return;
-      }
+      _this.inMemoryObjectiveDataStore.update(entity);
 
-      _this.dataStore.updateObjective(entity, function (e) {
-        if (e) {
-          callback(e);
-          return;
-        }
+      _this.onUpdate();
 
-        _this.inMemoryObjectiveDataStore.update(entity);
-
-        _this.onUpdate();
-
-        callback(null);
-      });
+      callback(null);
     });
   };
 
   ObjectiveRepositoryImpl.prototype.insert = function (entity, callback) {
     var _this = this;
 
-    this.isExist(entity.id, function (e, v) {
+    if (this.inMemoryObjectiveDataStore.isExist(entity.id)) {
+      callback(new Error('entity already exists: ' + entity.id.value));
+      return;
+    }
+
+    this.dataStore.insertObjective(entity, function (e) {
       if (e) {
         callback(e);
         return;
       }
 
-      if (v) {
-        callback(new Error('entity already exists: ' + entity.id.value));
-        return;
-      }
+      _this.inMemoryObjectiveDataStore.insert(entity);
 
-      _this.dataStore.insertObjective(entity, function (e) {
-        if (e) {
-          callback(e);
-          return;
-        }
+      _this.onUpdate();
 
-        _this.inMemoryObjectiveDataStore.insert(entity);
-
-        _this.onUpdate();
-
-        callback(null);
-      });
+      callback(null);
     });
   };
 
@@ -924,29 +842,22 @@ function () {
       callback(new Error('children already exists'));
     }
 
-    this.isExist(id, function (e, v) {
+    if (!this.inMemoryObjectiveDataStore.isExist(id)) {
+      callback(new Error('entity not found: ' + id.value));
+      return;
+    }
+
+    this.dataStore.removeObjective(id, function (e) {
       if (e) {
         callback(e);
         return;
       }
 
-      if (!v) {
-        callback(new Error('entity not found: ' + id.value));
-        return;
-      }
+      _this.inMemoryObjectiveDataStore.remove(id);
 
-      _this.dataStore.removeObjective(id, function (e) {
-        if (e) {
-          callback(e);
-          return;
-        }
+      _this.onUpdate();
 
-        _this.inMemoryObjectiveDataStore.remove(id);
-
-        _this.onUpdate();
-
-        callback(null);
-      });
+      callback(null);
     });
   };
 
@@ -977,63 +888,63 @@ function qclick(selector, callback) {
   return document.querySelector(selector).addEventListener('click', callback);
 }
 
-try {
-  var toMermaid_1 = function toMermaid_1(entities, actions) {
-    var map = {};
-    entities.forEach(function (v) {
-      return map[v.id.value] = v;
-    });
-    var rectText = entities.map(function (v) {
-      return v.id.value + "[\"" + v.title + "\"]";
+var toMermaid = function toMermaid(entities, actions) {
+  var map = {};
+  entities.forEach(function (v) {
+    return map[v.id.value] = v;
+  });
+  var rectText = entities.map(function (v) {
+    return v.id.value + "[\"" + v.title + "\"]";
+  }).join('\n');
+  var linkText = entities.map(function (v) {
+    return "click " + v.id.value + " \"./index.html#" + v.id.value + "\"";
+  }).join('\n');
+  var arrowText = entities.filter(function (v) {
+    return v.parent && map[v.parent.value];
+  }).map(function (v) {
+    return v.id.value + " --> " + v.parent.value;
+  }).join('\n');
+  var roundText = actions.map(function (v) {
+    return v.id.value + "(\"" + v.title + "\"):::action";
+  }).join('\n');
+  var actionLinkText = actions.map(function (v) {
+    return "click " + v.id.value + " \"./index.html#" + v.id.value + "\"";
+  }).join('\n');
+  var actionArrowText = actions.map(function (v) {
+    return v.parents.map(function (p) {
+      return v.id.value + " --> " + p.value;
     }).join('\n');
-    var linkText = entities.map(function (v) {
-      return "click " + v.id.value + " \"./index.html#" + v.id.value + "\"";
-    }).join('\n');
-    var arrowText = entities.filter(function (v) {
-      return v.parent && map[v.parent.value];
-    }).map(function (v) {
-      return v.id.value + " --> " + v.parent.value;
-    }).join('\n');
-    var roundText = actions.map(function (v) {
-      return v.id.value + "(\"" + v.title + "\"):::action";
-    }).join('\n');
-    var actionLinkText = actions.map(function (v) {
-      return "click " + v.id.value + " \"./index.html#" + v.id.value + "\"";
-    }).join('\n');
-    var actionArrowText = actions.map(function (v) {
-      return v.parents.map(function (p) {
-        return v.id.value + " --> " + p.value;
-      }).join('\n');
-    }).join('\n');
-    return ("\ngraph LR\nclassDef action fill:#ECFFEC, stroke: #93DB70;\n" + rectText + "\n" + linkText + "\n" + arrowText + "\n" + roundText + "\n" + actionLinkText + "\n" + actionArrowText + "\n  ").trim();
-  };
+  }).join('\n');
+  return ("\ngraph LR\nclassDef action fill:#ECFFEC, stroke: #93DB70;\n" + rectText + "\n" + linkText + "\n" + arrowText + "\n" + roundText + "\n" + actionLinkText + "\n" + actionArrowText + "\n  ").trim();
+};
 
-  var dataStore = new infra_1.DataStoreImpl();
-  var objectiveRepository_1 = new ObjectiveRepositoryImpl_1.ObjectiveRepositoryImpl(dataStore);
-  var actionRepository_1 = new ActionRepositoryImpl_1.ActionRepositoryImpl(dataStore);
+var isObjectiveId = function isObjectiveId(id) {
+  return id[0] == 'O';
+};
 
-  var isObjectiveId_1 = function isObjectiveId_1(id) {
-    return id[0] == 'O';
-  };
+var isActionId = function isActionId(id) {
+  return id[0] == 'A';
+};
 
-  var isActionId_1 = function isActionId_1(id) {
-    return id[0] == 'A';
-  };
+var dataStore = new infra_1.DataStoreImpl();
+dataStore.findAll(function (err, objectives, actions) {
+  var objectiveRepository = new ObjectiveRepositoryImpl_1.ObjectiveRepositoryImpl(dataStore, objectives);
+  var actionRepository = new ActionRepositoryImpl_1.ActionRepositoryImpl(dataStore, actions);
 
-  var onTreeUpdate_1 = function onTreeUpdate_1() {
+  var onTreeUpdate = function onTreeUpdate() {
     var idInHtml = q('#rootIdSpan').value;
     var objectiveMap = {};
     var actionMap = {};
     var objectives = [];
     var parents = null;
 
-    if (isObjectiveId_1(idInHtml)) {
+    if (isObjectiveId(idInHtml)) {
       parents = [new domain_1.Objective.Id(idInHtml)];
-    } else if (isActionId_1(idInHtml)) {
-      var current = actionRepository_1.findById(new domain_1.Action.Id(idInHtml));
+    } else if (isActionId(idInHtml)) {
+      var current = actionRepository.findById(new domain_1.Action.Id(idInHtml));
       parents = current.parents;
       parents.forEach(function (p) {
-        actionRepository_1.findChildren(p).forEach(function (v) {
+        actionRepository.findChildren(p).forEach(function (v) {
           actionMap[v.id.value] = v;
         });
       });
@@ -1043,31 +954,31 @@ try {
     }
 
     parents.forEach(function (p) {
-      var underObjectives = objectiveRepository_1.findUnder(p);
+      var underObjectives = objectiveRepository.findUnder(p);
       underObjectives.forEach(function (v) {
         objectiveMap[v.id.value] = v;
-        actionRepository_1.findChildren(v.id).forEach(function (v) {
+        actionRepository.findChildren(v.id).forEach(function (v) {
           actionMap[v.id.value] = v;
         });
       });
-      objectiveRepository_1.findParentsTree(p).forEach(function (v) {
+      objectiveRepository.findParentsTree(p).forEach(function (v) {
         return objectiveMap[v.id.value] = v;
       });
     });
     var element = document.querySelector("#profu");
-    var text = toMermaid_1(Object.values(objectiveMap), Object.values(actionMap));
+    var text = toMermaid(Object.values(objectiveMap), Object.values(actionMap));
     console.log(text);
     mermaid.mermaidAPI.render('graphDiv', text, function (svg) {
       return element.innerHTML = svg;
     });
   };
 
-  onTreeUpdate_1();
+  onTreeUpdate();
   qclick('#applyRootIdButton', function () {
-    onTreeUpdate_1();
+    onTreeUpdate();
   });
 
-  var getMetaDataFormTextArea_1 = function getMetaDataFormTextArea_1() {
+  var getMetaDataFormTextArea = function getMetaDataFormTextArea() {
     var text = q('#detailTextArea').value;
 
     if (text.trim()[0] != '#') {
@@ -1083,34 +994,34 @@ try {
     }) : []);
   };
 
-  var setMetaDataToTextArea_1 = function setMetaDataToTextArea_1(metaData) {
+  var setMetaDataToTextArea = function setMetaDataToTextArea(metaData) {
     q('#detailTextArea').value = ['# 説明: \n' + metaData.description, '', '# 担当: ' + metaData.members.join(', '), '# リンク: \n' + metaData.links.map(function (v) {
       return "- [" + v.name + "](" + v.path + ")";
     })].join('\n');
   };
 
-  var applyTargetId_1 = function applyTargetId_1() {
-    if (isObjectiveId_1(q('#targetId').value)) {
+  var applyTargetId = function applyTargetId() {
+    if (isObjectiveId(q('#targetId').value)) {
       var id = new domain_1.Objective.Id(q('#targetId').value);
-      var objective = objectiveRepository_1.findById(id);
+      var objective = objectiveRepository.findById(id);
       console.log(objective);
       q('#idSpan').innerHTML = objective.id.value;
       q('#titleInput').value = objective.title;
       q('#parentsInput').value = objective.parent.value;
-      setMetaDataToTextArea_1(objective.metaData);
+      setMetaDataToTextArea(objective.metaData);
       q('#linkUl').innerHTML = objective.metaData.links.map(function (v) {
         return "<li><a href=\"" + v.path + "\" target=\"_blank\">" + v.name + "</a></li>";
       }).join('\n');
-    } else if (isActionId_1(q('#targetId').value)) {
+    } else if (isActionId(q('#targetId').value)) {
       var id = new domain_1.Action.Id(q('#targetId').value);
-      var action = actionRepository_1.findById(id);
+      var action = actionRepository.findById(id);
       console.log(action);
       q('#idSpan').innerHTML = action.id.value;
       q('#titleInput').value = action.title;
       q('#parentsInput').value = action.parents.map(function (v) {
         return v.value;
       });
-      setMetaDataToTextArea_1(action.metaData);
+      setMetaDataToTextArea(action.metaData);
       q('#linkUl').innerHTML = action.metaData.links.map(function (v) {
         return "<li><a href=\"" + v.path + "\" target=\"_blank\">" + v.name + "</a></li>";
       }).join('\n');
@@ -1120,12 +1031,12 @@ try {
     }
   };
 
-  qclick('#applyTargetIdButton', applyTargetId_1);
+  qclick('#applyTargetIdButton', applyTargetId);
   qclick('#createSubButton', function () {
     q('#parentsInput').value = q('#idSpan').innerHTML;
     q('#idSpan').innerHTML = '';
     q('#titleInput').value = '';
-    setMetaDataToTextArea_1(domain_1.MetaData.empty());
+    setMetaDataToTextArea(domain_1.MetaData.empty());
   });
   qclick('#saveButton', function () {
     if (q('#idSpan').innerHTML.trim().length == 0) {
@@ -1140,7 +1051,7 @@ try {
         return;
       }
 
-      onTreeUpdate_1();
+      onTreeUpdate();
     };
 
     var idInHtml = q('#idSpan').innerHTML.trim();
@@ -1150,25 +1061,25 @@ try {
       throw new Error('IDとparentが同一です');
     }
 
-    if (isObjectiveId_1(idInHtml)) {
+    if (isObjectiveId(idInHtml)) {
       // 目標の保存
-      var newEntity = new domain_1.Objective.Entity(new domain_1.Objective.Id(idInHtml), q('#titleInput').value, new domain_1.Objective.Id(q('#parentsInput').value), getMetaDataFormTextArea_1());
-      objectiveRepository_1.update(newEntity, callbackOnSaved);
-    } else if (isActionId_1(idInHtml)) {
+      var newEntity = new domain_1.Objective.Entity(new domain_1.Objective.Id(idInHtml), q('#titleInput').value, new domain_1.Objective.Id(q('#parentsInput').value), getMetaDataFormTextArea());
+      objectiveRepository.update(newEntity, callbackOnSaved);
+    } else if (isActionId(idInHtml)) {
       // 施策の保存
       var newEntity = new domain_1.Action.Entity(new domain_1.Action.Id(q('#idSpan').innerHTML), q('#titleInput').value, q('#parentsInput').value.split(',').map(function (v) {
         return new domain_1.Action.Id(v.trim());
-      }), getMetaDataFormTextArea_1());
-      actionRepository_1.update(newEntity, callbackOnSaved);
+      }), getMetaDataFormTextArea());
+      actionRepository.update(newEntity, callbackOnSaved);
     } else {
       alert('未知のID');
       throw new Error('未知のID');
     }
   });
   qclick('#insertButton', function () {
-    objectiveRepository_1.createId(function (err, id) {
-      var newEntity = new domain_1.Objective.Entity(id, q('#titleInput').value, new domain_1.Objective.Id(q('#parentsInput').value), getMetaDataFormTextArea_1());
-      objectiveRepository_1.insert(newEntity, function (e) {
+    objectiveRepository.createId(function (err, id) {
+      var newEntity = new domain_1.Objective.Entity(id, q('#titleInput').value, new domain_1.Objective.Id(q('#parentsInput').value), getMetaDataFormTextArea());
+      objectiveRepository.insert(newEntity, function (e) {
         console.log('callback');
 
         if (e) {
@@ -1177,16 +1088,16 @@ try {
           return;
         }
 
-        onTreeUpdate_1();
+        onTreeUpdate();
       });
     });
   });
   qclick('#insertActionButton', function () {
-    actionRepository_1.createId(function (err, id) {
+    actionRepository.createId(function (err, id) {
       var newEntity = new domain_1.Action.Entity(id, q('#titleInput').value, q('#parentsInput').value.split(',').map(function (v) {
         return new domain_1.Objective.Id(v.trim());
-      }), getMetaDataFormTextArea_1());
-      actionRepository_1.insert(newEntity, function (e) {
+      }), getMetaDataFormTextArea());
+      actionRepository.insert(newEntity, function (e) {
         console.log('callback');
 
         if (e) {
@@ -1195,49 +1106,47 @@ try {
           return;
         }
 
-        onTreeUpdate_1();
+        onTreeUpdate();
       });
     });
   });
   qclick('#removeButton', function () {
     var idInHtml = q('#idSpan').innerHTML.trim();
 
-    if (isObjectiveId_1(idInHtml)) {
+    if (isObjectiveId(idInHtml)) {
       // 目標削除
       var objectiveId = new domain_1.Objective.Id(idInHtml);
 
-      if (actionRepository_1.hasChildren(objectiveId)) {
+      if (actionRepository.hasChildren(objectiveId)) {
         alert('子要素を消してください');
         throw new Error('子要素を消してください');
       }
 
-      objectiveRepository_1.remove(objectiveId, function (e) {
+      objectiveRepository.remove(objectiveId, function (e) {
         if (e) {
           alert(e.message);
           throw e;
         }
 
-        onTreeUpdate_1();
+        onTreeUpdate();
       });
-    } else if (isActionId_1(idInHtml)) {
+    } else if (isActionId(idInHtml)) {
       // 施策削除
-      actionRepository_1.remove(new domain_1.Action.Id(idInHtml), function (e) {
+      actionRepository.remove(new domain_1.Action.Id(idInHtml), function (e) {
         if (e) {
           alert(e.message);
           throw e;
         }
 
-        onTreeUpdate_1();
+        onTreeUpdate();
       });
     }
   });
   window.addEventListener('hashchange', function (e) {
     q('#targetId').value = window.location.hash.slice(1);
-    applyTargetId_1();
+    applyTargetId();
   });
-} catch (e) {
-  console.error(e);
-}
+}); // dataStore.findAll callback
 
 if (location.hash) {
   q('#targetId').value = window.location.hash.slice(1);
