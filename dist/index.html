@@ -16,32 +16,35 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/3.14.0/js-yaml.min.js" integrity="sha512-ia9gcZkLHA+lkNST5XlseHz/No5++YBneMsDp1IZRJSbi1YqQvBeskJuG1kR+PH1w7E0bFgEZegcj0EwpXQnww==" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+
     <script>mermaid.initialize({startOnLoad:false});</script>
     
     
   </head>
+  
   <h1>プロジェクト譜</h1>
-  タイトル: <input id="rootIdSpan" value="O0" /><button id="applyRootIdButton">反映</button><br>
   <div id="profu" class="mermaid"></div>
-  <h3>編集</h3>
-  編集対象: <input id="targetId" /><button id="applyTargetIdButton">反映</button><br>
-  ID: <span id="idSpan"></span><br>
-  タイトル: <input id="titleInput" /><br>
-  上位: <input id="parentsInput" /><br>
-  <textarea id="detailTextArea"></textarea><br>
-  <button id="saveButton">更新</button><button id="insertButton">新規目標作成</button><button id="insertActionButton">新規施策作成</button><br>
-  リンク<br>
-  <ul id="linkUl"></ul>
-  アクション<br>
-  <button id="createSubButton">子要素追加</button>
-  <button id="removeButton">削除</button>
+  <div id="app">
+    {{ message }}
+    <input id="rootIdSpan" value="O0" /><button id="applyRootIdButton">反映</button><br>
+    <h3>編集</h3>
+    編集対象: <input v-model="editTargetId" /><button id="applyTargetIdButton">反映</button><br>
+    ID: <span>{{editForm.id}}</span><br>
+    タイトル: <input v-model="editForm.title" /><br>
+    上位: <input /><br>
+    <textarea v-model="editForm.detail.value"></textarea><br>
+    <button v-on:click="onClickUpdateButton">更新</button><button id="insertButton">新規目標作成</button><button id="insertActionButton">新規施策作成</button><br>
+    リンク<br>
+    <ul>
+      <li v-for="link in editForm.links"><a v-bind:href="link.path" target="_blank">{{link.name}}</a></li>
+    </ul>
+    アクション<br>
+    <button id="createSubButton">子要素追加</button>
+    <button id="removeButton">削除</button>
 
+    <button v-on:click="onClickApplyRootIdButton()">test</button>
+  </div>
   <script src="./js/index/htmlmain.js?v=1"></script>
-  <script>
-function callback1(hoge) {
-  console.log('callback1');
-  console.log(hoge);
-}
-  </script>
 </html>
 

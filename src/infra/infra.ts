@@ -2,7 +2,8 @@ import {
   Link,
   MetaData,
   Objective,
-  Action} from '../domain/domain'
+  Action
+} from '../domain/domain'
 import { DataStore } from './DataStore';
 
 export class DataStoreImpl implements DataStore {
@@ -141,3 +142,7 @@ export class DataStoreImpl implements DataStore {
     localStorage.setItem('actionTree', raw);
   }
 }
+
+
+
+
