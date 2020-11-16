@@ -3,7 +3,8 @@ import {
   MetaData,
   Note,
   Task,
-  TaskLimitDate
+  TaskLimitDate,
+  TaskStatus
 } from '../../domain/domain';
 
 export class MetaDataForm {
@@ -28,8 +29,29 @@ export class MetaDataConverter {
       obj['担当'] ? obj['担当'].split(',').map(v => v.trim()) : [],
       obj['リンク'] ? obj['リンク'].map(v => new Link(v.name, v.path)) : [],
       new Note(obj['ノート'] || ''),
-      obj['マイルストーン'] ? obj['マイルストーン'].split('\n').map(v => new Task(new TaskLimitDate(v.slice(0, v.indexOf(' '))), v.slice(v.indexOf(' ')).trim())) : []
+      obj['マイルストーン'] ? obj['マイルストーン'].split('\n').map(MetaDataConverter.parseTaskLine) : []
     );
+  }
+
+  static parseTaskLine(line: string): Task {
+    line = line.trim();
+    const limitDate = new TaskLimitDate(line.slice(0, line.indexOf(' ')))
+    var title: string;
+    var status: TaskStatus;
+    if(line[line.length - 1] == ']') {// ステータスあり
+      const i = line.lastIndexOf('[');
+      title = line.slice(line.indexOf(' '), i).trim();
+      status = new TaskStatus(line.slice(i + 1, line.length - 1).trim());
+    } else {// ステータスなし
+      title = line.slice(line.indexOf(' ')).trim();
+      status = new TaskStatus('');
+    }
+    console.log(status);
+    return new Task(
+      limitDate,
+      title,
+      status
+    )
   }
 
   static toText(metaData: MetaData): string {
@@ -39,7 +61,7 @@ export class MetaDataConverter {
       '# 担当: ' + metaData.members.join(', '),
       '# リンク: \n' + metaData.links.map(v => `- [${v.name}](${v.path})`),
       '# ノート: \n' + metaData.note.value,
-      '# マイルストーン: \n' + metaData.tasks.map(v => `${v.limitDate.raw} ${v.title}`)
+      '# マイルストーン: \n' + metaData.tasks.map(v => `${v.limitDate.raw} ${v.title} ${v.status.isNotEmpty() ? '[' + v.status.raw + ']' : ''}`)
     ].join('\n');
   }
 

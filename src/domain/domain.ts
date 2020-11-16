@@ -29,12 +29,30 @@ export class TaskLimitDate {
   }
 }
 
+export class TaskStatus {
+  constructor(readonly raw: string) {}
+  toObject(): any {
+    return this.raw;
+  }
+  isDone(): boolean {
+    return false;
+  }
+  isNotEmpty(): boolean {
+    return this.raw.trim().length > 0;
+  }
+}
+
 export class Task {
-  constructor(readonly limitDate: TaskLimitDate, readonly title: string) {}
+  constructor(
+    readonly limitDate: TaskLimitDate, 
+    readonly title: string,
+    readonly status: TaskStatus
+  ) {}
   toObject(): any {
     return {
       limitDate: this.limitDate.toObject(),
-      title: this.title
+      title: this.title,
+      status: this.status.toObject()
     }
   }
 }

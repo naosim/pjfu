@@ -154,7 +154,7 @@ export class PjfuVue {
         alert('エラー: ' + e.message);
         return;
       }
-      this.mermaidTreeView.update();
+      this.onUpdate();
     }
 
     const anyId = new AnyId(this.data.editForm.id);
@@ -205,7 +205,7 @@ export class PjfuVue {
           alert('エラー: ' + e.message);
           return;
         }
-        this.mermaidTreeView.update();
+        this.onUpdate();
       });
     })
   }
@@ -225,7 +225,7 @@ export class PjfuVue {
           alert('エラー: ' + e.message);
           return;
         }
-        this.mermaidTreeView.update();
+        this.onUpdate();
       });
     })
   }
@@ -245,7 +245,7 @@ export class PjfuVue {
               alert(e.message);
               throw e;
             }
-            this.mermaidTreeView.update();
+            this.onUpdate();
             // onTreeUpdate();
           }
         )
@@ -258,10 +258,17 @@ export class PjfuVue {
               alert(e.message);
               throw e;
             }
-            this.mermaidTreeView.update();
+            this.onUpdate();
           }
         )
       }
     )
+  }
+
+  onUpdate() {
+    this.mermaidTreeView.update();
+
+    // マイルストーンを書く
+    this.objectiveRepository.findAll()
   }
 }

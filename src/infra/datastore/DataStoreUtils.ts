@@ -3,25 +3,32 @@ import {
   MetaData,
   Note,
   Task,
-  TaskLimitDate
+  TaskLimitDate,
+  TaskStatus
 } from '../../domain/domain';
 import { Action } from "../../domain/Action";
 import { Objective } from "../../domain/Objective";
 
 
+
 export class DataStoreUtils {
+
+  private static dataToMetaData(mataDataObj): MetaData {
+    return new MetaData(
+      mataDataObj.description,
+      mataDataObj.members || [],
+      mataDataObj.links ? mataDataObj.links.map(v => new Link(v.name, v.path)) : [],
+      new Note(mataDataObj.note || ''),
+      mataDataObj.tasks ? mataDataObj.tasks.map(v => new Task(new TaskLimitDate(v.limitDate), v.title, new TaskStatus(v.status || ''))) : []
+    )
+  }
+
   static dataToObjectiveEntity(v): Objective.Entity {
     return new Objective.Entity(
       new Objective.Id(v.id),
       v.title,
       v.parent ? new Objective.Id(v.parent) : null,
-      new MetaData(
-        v.metaData.description,
-        v.metaData.members || [],
-        v.metaData.links ? v.metaData.links.map(v => new Link(v.name, v.path)) : [],
-        new Note(v.note || v.metaData.note || ''),
-        v.metaData.tasks ? v.metaData.tasks.map(v => new Task(new TaskLimitDate(v.limitDate), v.title)) : []
-      )
+      DataStoreUtils.dataToMetaData(v.metaData)
     );
   }
 
@@ -30,13 +37,7 @@ export class DataStoreUtils {
       new Objective.Id(v.id),
       v.title,
       v.parents.map(v => new Action.Id(v)),
-      new MetaData(
-        v.metaData.description,
-        v.metaData.members || [],
-        v.metaData.links ? v.metaData.links.map(v => new Link(v.name, v.path)) : [],
-        new Note(v.note || v.metaData.note || ''),
-        v.metaData.tasks ? v.metaData.tasks.map(v => new Task(new TaskLimitDate(v.limitDate), v.title)) : []
-      )
+      DataStoreUtils.dataToMetaData(v.metaData)
     );
   }
 }

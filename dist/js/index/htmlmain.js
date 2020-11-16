@@ -123,7 +123,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Link = exports.MetaData = exports.Task = exports.TaskLimitDate = exports.Note = void 0;
+exports.Link = exports.MetaData = exports.Task = exports.TaskStatus = exports.TaskLimitDate = exports.Note = void 0;
 
 var Note =
 /** @class */
@@ -165,18 +165,44 @@ function () {
 
 exports.TaskLimitDate = TaskLimitDate;
 
+var TaskStatus =
+/** @class */
+function () {
+  function TaskStatus(raw) {
+    this.raw = raw;
+  }
+
+  TaskStatus.prototype.toObject = function () {
+    return this.raw;
+  };
+
+  TaskStatus.prototype.isDone = function () {
+    return false;
+  };
+
+  TaskStatus.prototype.isNotEmpty = function () {
+    return this.raw.trim().length > 0;
+  };
+
+  return TaskStatus;
+}();
+
+exports.TaskStatus = TaskStatus;
+
 var Task =
 /** @class */
 function () {
-  function Task(limitDate, title) {
+  function Task(limitDate, title, status) {
     this.limitDate = limitDate;
     this.title = title;
+    this.status = status;
   }
 
   Task.prototype.toObject = function () {
     return {
       limitDate: this.limitDate.toObject(),
-      title: this.title
+      title: this.title,
+      status: this.status.toObject()
     };
   };
 
@@ -397,22 +423,22 @@ var DataStoreUtils =
 function () {
   function DataStoreUtils() {}
 
-  DataStoreUtils.dataToObjectiveEntity = function (v) {
-    return new Objective_1.Objective.Entity(new Objective_1.Objective.Id(v.id), v.title, v.parent ? new Objective_1.Objective.Id(v.parent) : null, new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links ? v.metaData.links.map(function (v) {
+  DataStoreUtils.dataToMetaData = function (mataDataObj) {
+    return new domain_1.MetaData(mataDataObj.description, mataDataObj.members || [], mataDataObj.links ? mataDataObj.links.map(function (v) {
       return new domain_1.Link(v.name, v.path);
-    }) : [], new domain_1.Note(v.note || v.metaData.note || ''), v.metaData.tasks ? v.metaData.tasks.map(function (v) {
-      return new domain_1.Task(new domain_1.TaskLimitDate(v.limitDate), v.title);
-    }) : []));
+    }) : [], new domain_1.Note(mataDataObj.note || ''), mataDataObj.tasks ? mataDataObj.tasks.map(function (v) {
+      return new domain_1.Task(new domain_1.TaskLimitDate(v.limitDate), v.title, new domain_1.TaskStatus(v.status || ''));
+    }) : []);
+  };
+
+  DataStoreUtils.dataToObjectiveEntity = function (v) {
+    return new Objective_1.Objective.Entity(new Objective_1.Objective.Id(v.id), v.title, v.parent ? new Objective_1.Objective.Id(v.parent) : null, DataStoreUtils.dataToMetaData(v.metaData));
   };
 
   DataStoreUtils.dataToActionEntity = function (v) {
     return new Action_1.Action.Entity(new Objective_1.Objective.Id(v.id), v.title, v.parents.map(function (v) {
       return new Action_1.Action.Id(v);
-    }), new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links ? v.metaData.links.map(function (v) {
-      return new domain_1.Link(v.name, v.path);
-    }) : [], new domain_1.Note(v.note || v.metaData.note || ''), v.metaData.tasks ? v.metaData.tasks.map(function (v) {
-      return new domain_1.Task(new domain_1.TaskLimitDate(v.limitDate), v.title);
-    }) : []));
+    }), DataStoreUtils.dataToMetaData(v.metaData));
   };
 
   return DataStoreUtils;
@@ -927,16 +953,35 @@ function () {
       return v.trim();
     }) : [], obj['リンク'] ? obj['リンク'].map(function (v) {
       return new domain_1.Link(v.name, v.path);
-    }) : [], new domain_1.Note(obj['ノート'] || ''), obj['マイルストーン'] ? obj['マイルストーン'].split('\n').map(function (v) {
-      return new domain_1.Task(new domain_1.TaskLimitDate(v.slice(0, v.indexOf(' '))), v.slice(v.indexOf(' ')).trim());
-    }) : []);
+    }) : [], new domain_1.Note(obj['ノート'] || ''), obj['マイルストーン'] ? obj['マイルストーン'].split('\n').map(MetaDataConverter.parseTaskLine) : []);
+  };
+
+  MetaDataConverter.parseTaskLine = function (line) {
+    line = line.trim();
+    var limitDate = new domain_1.TaskLimitDate(line.slice(0, line.indexOf(' ')));
+    var title;
+    var status;
+
+    if (line[line.length - 1] == ']') {
+      // ステータスあり
+      var i = line.lastIndexOf('[');
+      title = line.slice(line.indexOf(' '), i).trim();
+      status = new domain_1.TaskStatus(line.slice(i + 1, line.length - 1).trim());
+    } else {
+      // ステータスなし
+      title = line.slice(line.indexOf(' ')).trim();
+      status = new domain_1.TaskStatus('');
+    }
+
+    console.log(status);
+    return new domain_1.Task(limitDate, title, status);
   };
 
   MetaDataConverter.toText = function (metaData) {
     return ['# 説明: \n' + metaData.description, '', '# 担当: ' + metaData.members.join(', '), '# リンク: \n' + metaData.links.map(function (v) {
       return "- [" + v.name + "](" + v.path + ")";
     }), '# ノート: \n' + metaData.note.value, '# マイルストーン: \n' + metaData.tasks.map(function (v) {
-      return v.limitDate.raw + " " + v.title;
+      return v.limitDate.raw + " " + v.title + " " + (v.status.isNotEmpty() ? '[' + v.status.raw + ']' : '');
     })].join('\n');
   };
 
@@ -1244,7 +1289,7 @@ function () {
         return;
       }
 
-      _this.mermaidTreeView.update();
+      _this.onUpdate();
     };
 
     var anyId = new AnyId_1.AnyId(this.data.editForm.id);
@@ -1286,7 +1331,7 @@ function () {
           return;
         }
 
-        _this.mermaidTreeView.update();
+        _this.onUpdate();
       });
     });
   };
@@ -1306,7 +1351,7 @@ function () {
           return;
         }
 
-        _this.mermaidTreeView.update();
+        _this.onUpdate();
       });
     });
   };
@@ -1327,7 +1372,7 @@ function () {
           throw e;
         }
 
-        _this.mermaidTreeView.update(); // onTreeUpdate();
+        _this.onUpdate(); // onTreeUpdate();
 
       });
     }, function (id) {
@@ -1337,9 +1382,15 @@ function () {
           throw e;
         }
 
-        _this.mermaidTreeView.update();
+        _this.onUpdate();
       });
     });
+  };
+
+  PjfuVue.prototype.onUpdate = function () {
+    this.mermaidTreeView.update(); // マイルストーンを書く
+
+    this.objectiveRepository.findAll();
   };
 
   return PjfuVue;
