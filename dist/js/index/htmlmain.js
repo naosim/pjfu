@@ -123,15 +123,40 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Link = exports.MetaData = void 0;
+exports.Link = exports.MetaData = exports.Note = void 0;
+
+var Note =
+/** @class */
+function () {
+  function Note(value) {
+    this.value = value;
+  }
+
+  Note.prototype.toObject = function () {
+    return this.value;
+  };
+
+  Note.prototype.isNotEmpty = function () {
+    return this.value.trim().length > 0;
+  };
+
+  Note.empty = function () {
+    return new Note('');
+  };
+
+  return Note;
+}();
+
+exports.Note = Note;
 
 var MetaData =
 /** @class */
 function () {
-  function MetaData(description, members, links) {
+  function MetaData(description, members, links, note) {
     this.description = description;
     this.members = members;
     this.links = links;
+    this.note = note;
   }
 
   MetaData.prototype.toObject = function () {
@@ -140,12 +165,13 @@ function () {
       members: this.members,
       links: this.links.map(function (v) {
         return v.toObject();
-      })
+      }),
+      note: this.note.toObject()
     };
   };
 
   MetaData.empty = function () {
-    return new MetaData('', [], []);
+    return new MetaData('', [], [], Note.empty());
   };
 
   return MetaData;
@@ -261,12 +287,11 @@ var Action;
   var Entity =
   /** @class */
   function () {
-    function Entity(id, title, parents, metaData, note) {
+    function Entity(id, title, parents, metaData) {
       this.id = id;
       this.title = title;
       this.parents = parents;
       this.metaData = metaData;
-      this.note = note;
 
       if (!title || title.trim().length == 0) {
         throw new Error('タイトルが空です');
@@ -280,8 +305,7 @@ var Action;
         parents: this.parents.map(function (v) {
           return v.toObject();
         }),
-        metaData: this.metaData.toObject(),
-        note: this.note.toObject()
+        metaData: this.metaData.toObject()
       };
     };
 
@@ -313,26 +337,6 @@ var Action;
   }();
 
   Action.Id = Id;
-
-  var Note =
-  /** @class */
-  function () {
-    function Note(value) {
-      this.value = value;
-    }
-
-    Note.prototype.toObject = function () {
-      return this.value;
-    };
-
-    Note.prototype.isNotEmpty = function () {
-      return this.value.trim().length > 0;
-    };
-
-    return Note;
-  }();
-
-  Action.Note = Note;
 })(Action = exports.Action || (exports.Action = {}));
 },{}],"infra/datastore/DataStoreUtils.ts":[function(require,module,exports) {
 "use strict";
@@ -356,7 +360,7 @@ function () {
   DataStoreUtils.dataToObjectiveEntity = function (v) {
     return new Objective_1.Objective.Entity(new Objective_1.Objective.Id(v.id), v.title, v.parent ? new Objective_1.Objective.Id(v.parent) : null, new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links ? v.metaData.links.map(function (v) {
       return new domain_1.Link(v.name, v.path);
-    }) : []));
+    }) : [], new domain_1.Note(v.note || v.metaData.note || '')));
   };
 
   DataStoreUtils.dataToActionEntity = function (v) {
@@ -364,7 +368,7 @@ function () {
       return new Action_1.Action.Id(v);
     }), new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links ? v.metaData.links.map(function (v) {
       return new domain_1.Link(v.name, v.path);
-    }) : []), new Action_1.Action.Note(v.note || ''));
+    }) : [], new domain_1.Note(v.note || v.metaData.note || '')));
   };
 
   return DataStoreUtils;
@@ -817,12 +821,12 @@ function () {
       }).join('\n');
     }).join('\n');
     var noteText = actions.filter(function (v) {
-      return v.note.isNotEmpty();
+      return v.metaData.note.isNotEmpty();
     }).map(function (v) {
-      return v.id.value + "_note[\"" + v.note.value.split('\n').join('<br>') + "\"]:::note";
+      return v.id.value + "_note[\"" + v.metaData.note.value.split('\n').join('<br>') + "\"]:::note";
     }).join('\n');
     var noteArrowText = actions.filter(function (v) {
-      return v.note.isNotEmpty();
+      return v.metaData.note.isNotEmpty();
     }).map(function (v) {
       return v.id.value + "_note --- " + v.id.value;
     }).join('\n');
@@ -870,7 +874,7 @@ function () {
 
   MetaDataConverter.toMetaData = function (text) {
     if (text.trim()[0] != '#') {
-      return new domain_1.MetaData(text, [], []);
+      return new domain_1.MetaData(text, [], [], domain_1.Note.empty());
     }
 
     var obj = MetaDataConverter.textToObj(text);
@@ -879,13 +883,13 @@ function () {
       return v.trim();
     }) : [], obj['リンク'] ? obj['リンク'].map(function (v) {
       return new domain_1.Link(v.name, v.path);
-    }) : []);
+    }) : [], new domain_1.Note(obj['ノート'] || ''));
   };
 
   MetaDataConverter.toText = function (metaData) {
     return ['# 説明: \n' + metaData.description, '', '# 担当: ' + metaData.members.join(', '), '# リンク: \n' + metaData.links.map(function (v) {
       return "- [" + v.name + "](" + v.path + ")";
-    })].join('\n');
+    }), '# ノート: \n' + metaData.note.value].join('\n');
   };
 
   MetaDataConverter.textToObj = function (text) {
@@ -1095,8 +1099,7 @@ function () {
         links: [{
           name: '',
           path: ''
-        }],
-        note: ''
+        }]
       }
     };
     this.init(Vue);
@@ -1160,7 +1163,6 @@ function () {
           path: v.path
         };
       });
-      _this.data.editForm.note = '';
     }, function (id) {
       var action = _this.actionRepository.findById(id);
 
@@ -1178,7 +1180,6 @@ function () {
           path: v.path
         };
       });
-      _this.data.editForm.note = action.note.value;
     });
     this.mermaidTreeView.update(id);
   };
@@ -1209,7 +1210,7 @@ function () {
 
       _this.objectiveRepository.update(newEntity, callbackOnSaved);
     }, function (id) {
-      var newEntity = new Action_1.Action.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get(), _this.data.editForm.detail.get(), new Action_1.Action.Note(_this.data.editForm.note));
+      var newEntity = new Action_1.Action.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get(), _this.data.editForm.detail.get());
 
       _this.actionRepository.update(newEntity, callbackOnSaved);
     });
@@ -1246,7 +1247,7 @@ function () {
     var _this = this;
 
     this.actionRepository.createId(function (err, id) {
-      var newEntity = new Action_1.Action.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get(), _this.data.editForm.detail.get(), new Action_1.Action.Note(_this.data.editForm.note));
+      var newEntity = new Action_1.Action.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get(), _this.data.editForm.detail.get());
 
       _this.actionRepository.insert(newEntity, function (e) {
         console.log('callback');

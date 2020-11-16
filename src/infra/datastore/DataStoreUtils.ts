@@ -1,6 +1,7 @@
 import {
   Link,
-  MetaData
+  MetaData,
+  Note
 } from '../../domain/domain';
 import { Action } from "../../domain/Action";
 import { Objective } from "../../domain/Objective";
@@ -15,7 +16,9 @@ export class DataStoreUtils {
       new MetaData(
         v.metaData.description,
         v.metaData.members || [],
-        v.metaData.links ? v.metaData.links.map(v => new Link(v.name, v.path)) : [])
+        v.metaData.links ? v.metaData.links.map(v => new Link(v.name, v.path)) : [],
+        new Note(v.note || v.metaData.note || '')
+      )
     );
   }
 
@@ -27,9 +30,9 @@ export class DataStoreUtils {
       new MetaData(
         v.metaData.description,
         v.metaData.members || [],
-        v.metaData.links ? v.metaData.links.map(v => new Link(v.name, v.path)) : []
-      ),
-      new Action.Note(v.note || '')
+        v.metaData.links ? v.metaData.links.map(v => new Link(v.name, v.path)) : [],
+        new Note(v.note || v.metaData.note || '')
+      )
     );
   }
 }

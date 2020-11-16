@@ -1,6 +1,7 @@
 import {
   Link,
-  MetaData
+  MetaData,
+  Note
 } from '../../domain/domain';
 
 export class MetaDataForm {
@@ -16,14 +17,15 @@ export class MetaDataForm {
 export class MetaDataConverter {
   static toMetaData(text: string): MetaData {
     if (text.trim()[0] != '#') {
-      return new MetaData(text, [], []);
+      return new MetaData(text, [], [], Note.empty());
     }
     const obj = MetaDataConverter.textToObj(text);
     console.log(obj);
     return new MetaData(
       obj['説明'] || '',
       obj['担当'] ? obj['担当'].split(',').map(v => v.trim()) : [],
-      obj['リンク'] ? obj['リンク'].map(v => new Link(v.name, v.path)) : []
+      obj['リンク'] ? obj['リンク'].map(v => new Link(v.name, v.path)) : [],
+      new Note(obj['ノート'] || '')
     );
   }
 
@@ -32,7 +34,8 @@ export class MetaDataConverter {
       '# 説明: \n' + metaData.description,
       '',
       '# 担当: ' + metaData.members.join(', '),
-      '# リンク: \n' + metaData.links.map(v => `- [${v.name}](${v.path})`)
+      '# リンク: \n' + metaData.links.map(v => `- [${v.name}](${v.path})`),
+      '# ノート: \n' + metaData.note.value
     ].join('\n');
   }
 

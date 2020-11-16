@@ -78,7 +78,6 @@ export class PjfuVue {
       parents: ParentsForm;
       detail: MetaDataForm;
       links: { name: string; path: string; }[];
-      note: string
     };
   } = {
       message: 'hoge',
@@ -89,8 +88,7 @@ export class PjfuVue {
         title: '',
         parents: new ParentsForm(),
         detail: new MetaDataForm(),
-        links: [{ name: '', path: '' }],
-        note: ''
+        links: [{ name: '', path: '' }]
       }
     };
   constructor(
@@ -135,7 +133,6 @@ export class PjfuVue {
         this.data.editForm.parents.set(objective.isNotRoot ? [objective.parent] : [])
         this.data.editForm.detail.set(objective.metaData)
         this.data.editForm.links = objective.metaData.links.map(v => ({name: v.name, path: v.path}))
-        this.data.editForm.note = '';
       },
       id => {
         const action = this.actionRepository.findById(id);
@@ -145,7 +142,6 @@ export class PjfuVue {
         this.data.editForm.parents.set(action.parents);
         this.data.editForm.detail.set(action.metaData)
         this.data.editForm.links = action.metaData.links.map(v => ({name: v.name, path: v.path}))
-        this.data.editForm.note = action.note.value;
       }
     )
     this.mermaidTreeView.update(id);
@@ -180,8 +176,7 @@ export class PjfuVue {
           id,
           this.data.editForm.title,
           this.data.editForm.parents.get(),
-          this.data.editForm.detail.get(),
-          new Action.Note(this.data.editForm.note)
+          this.data.editForm.detail.get()
         )
         this.actionRepository.update(newEntity, callbackOnSaved);
       }
@@ -221,8 +216,7 @@ export class PjfuVue {
         id,
         this.data.editForm.title,
         this.data.editForm.parents.get(),
-        this.data.editForm.detail.get(),
-        new Action.Note(this.data.editForm.note)
+        this.data.editForm.detail.get()
       )
       this.actionRepository.insert(newEntity, (e) => {
         console.log('callback');
