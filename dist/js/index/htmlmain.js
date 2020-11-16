@@ -735,24 +735,23 @@ var AnyId_1 = require("./AnyId");
 var MermaidTreeView =
 /** @class */
 function () {
-  function MermaidTreeView(objectiveRepository, actionRepository, mermaid, form) {
+  function MermaidTreeView(objectiveRepository, actionRepository, mermaid) {
     this.objectiveRepository = objectiveRepository;
     this.actionRepository = actionRepository;
     this.mermaid = mermaid;
-    this.form = form;
   }
 
   MermaidTreeView.prototype.update = function () {
     var _this = this;
 
-    var idInHtml = this.form.rootIdSpan.value;
+    var idInHtml = document.querySelector('#rootIdSpan').value;
     var anyId = new AnyId_1.AnyId(idInHtml);
     var objectiveMap = {};
     var actionMap = {};
     var objectives = [];
     var parents = null;
     anyId.forEach(function (id) {
-      parents = [new Objective_1.Objective.Id(idInHtml)];
+      parents = [id];
     }, function (id) {
       var current = _this.actionRepository.findById(new Action_1.Action.Id(idInHtml));
 
@@ -1429,9 +1428,7 @@ function main(dataStore) {
   dataStore.findAll(function (err, objectives, actions) {
     var objectiveRepository = new ObjectiveRepositoryImpl_1.ObjectiveRepositoryImpl(dataStore, objectives);
     var actionRepository = new ActionRepositoryImpl_1.ActionRepositoryImpl(dataStore, actions);
-    var mermaidTreeView = new PjfuVue_1.MermaidTreeView(objectiveRepository, actionRepository, window['mermaid'], {
-      rootIdSpan: document.querySelector('#rootIdSpan')
-    });
+    var mermaidTreeView = new PjfuVue_1.MermaidTreeView(objectiveRepository, actionRepository, window['mermaid']);
     var pjfuVue = new PjfuVue_1.PjfuVue(objectiveRepository, actionRepository, mermaidTreeView, window['Vue']); // 編集フォームはURLのハッシュに従う
 
     var updateFormByHash = function updateFormByHash() {

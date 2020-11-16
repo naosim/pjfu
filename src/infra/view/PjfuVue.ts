@@ -9,15 +9,12 @@ export class MermaidTreeView {
   constructor(
     private objectiveRepository: Objective.ReadRepository,
     private actionRepository: Action.ReadRepository,
-    private mermaid: any,
-    private form: {
-      rootIdSpan: { value: string }
-    }
+    private mermaid: any
   ) {
     
   }
   update() {
-    const idInHtml = this.form.rootIdSpan.value;
+    const idInHtml = ((document.querySelector('#rootIdSpan') as unknown) as {value:string}).value;
     const anyId = new AnyId(idInHtml);
     const objectiveMap: { [key: string]: Objective.Entity } = {}
     const actionMap: { [key: string]: Action.Entity } = {}
@@ -25,7 +22,7 @@ export class MermaidTreeView {
     var parents: Objective.Id[] = null;
     anyId.forEach(
       id => {
-        parents = [new Objective.Id(idInHtml)]
+        parents = [id]
       },
       id => {
         const current: Action.Entity = this.actionRepository.findById(new Action.Id(idInHtml));

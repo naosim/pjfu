@@ -13,10 +13,7 @@ export function main(dataStore: DataStore) {
     const mermaidTreeView = new MermaidTreeView(
       objectiveRepository,
       actionRepository,
-      window['mermaid'], 
-      {
-        rootIdSpan: (document.querySelector('#rootIdSpan') as unknown) as { value: string; }
-      }
+      window['mermaid']
     );
     const pjfuVue = new PjfuVue(
       objectiveRepository,
