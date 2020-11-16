@@ -3,14 +3,12 @@ import { Action } from "../../domain/Action";
 import { Objective } from "../../domain/Objective";
 import { MermaidConvertor } from './MermaidConvertor';
 import { MetaDataForm } from './MetaDataConverter';
-import { ActionRepositoryImpl } from '../ActionRepositoryImpl';
 import { AnyId } from './AnyId';
-import { ObjectiveRepositoryImpl } from '../ObjectiveRepositoryImpl';
 
 export class MermaidTreeView {
   constructor(
-    private objectiveRepository: ObjectiveRepositoryImpl,
-    private actionRepository: ActionRepositoryImpl,
+    private objectiveRepository: Objective.ReadRepository,
+    private actionRepository: Action.ReadRepository,
     private mermaid: any,
     private form: {
       rootIdSpan: { value: string }
@@ -92,8 +90,8 @@ export class PjfuVue {
       }
     };
   constructor(
-    private objectiveRepository: ObjectiveRepositoryImpl,
-    private actionRepository: ActionRepositoryImpl,
+    private objectiveRepository: Objective.Repository,
+    private actionRepository: Action.Repository,
     private mermaidTreeView: MermaidTreeView,
     Vue: any
   ) {

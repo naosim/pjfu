@@ -7,6 +7,8 @@ import { DataStore } from "./infra/DataStore";
 import { ActionRepositoryImpl } from "./infra/ActionRepositoryImpl";
 import { ObjectiveRepositoryImpl } from "./infra/ObjectiveRepositoryImpl";
 import { AnyId } from './infra/view/AnyId';
+import { Objective } from './domain/Objective';
+import { Action } from './domain/Action';
 declare const mermaid: any;
 declare var Vue: any;
 
@@ -19,8 +21,8 @@ function qclick(selector, callback) {
 
 const dataStore: DataStore = new DataStoreImpl();
 dataStore.findAll((err, objectives, actions) => {
-  const objectiveRepository = new ObjectiveRepositoryImpl(dataStore, objectives)
-  const actionRepository = new ActionRepositoryImpl(dataStore, actions)
+  const objectiveRepository: Objective.Repository = new ObjectiveRepositoryImpl(dataStore, objectives)
+  const actionRepository: Action.Repository = new ActionRepositoryImpl(dataStore, actions)
   const mermaidTreeView = new MermaidTreeView(
     objectiveRepository, 
     actionRepository,
