@@ -6,9 +6,6 @@
       .mermaid {
         border: solid 1px #aaa;
       }
-      g.label {
-        font-size: 9pt;
-      }
       textarea {
         width: 400px;
         height: 400px;
@@ -28,10 +25,10 @@
   <div id="profu" class="mermaid"></div>
   <div id="app">
     {{ message }}
-    <input id="rootIdSpan" value="O0" /><button id="applyRootIdButton">反映</button><br>
+    ツリー表示: <input id="rootIdSpan" value="O0" /><button id="applyRootIdButton">反映</button><button id="applyTreeCenteredFromSelected">選択中を反映</button><br>
     <h3>編集</h3>
     編集対象: <input v-model="editTargetId" /><button id="applyTargetIdButton">反映</button><br>
-    ID: <span>{{editForm.id}}</span><br>
+    ID: <span id="selectedIdSpan">{{editForm.id}}</span><br>
     タイトル: <input v-model="editForm.title" /><br>
     上位: <input v-model="editForm.parents.value"/><br>
     <textarea v-model="editForm.detail.value"></textarea><br>

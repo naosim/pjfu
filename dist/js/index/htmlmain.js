@@ -763,13 +763,17 @@ var MermaidConvertor =
 function () {
   function MermaidConvertor() {}
 
-  MermaidConvertor.toMermaidScript = function (entities, actions) {
+  MermaidConvertor.toMermaidScript = function (entities, actions, treeCenterId, selectedId) {
+    var isSelected = function isSelected(id) {
+      return id == treeCenterId.getValue() || selectedId && id == selectedId.getValue();
+    };
+
     var map = {};
     entities.forEach(function (v) {
       return map[v.id.value] = v;
     });
     var rectText = entities.map(function (v) {
-      return v.id.value + "[\"" + v.title + "\"]";
+      return v.id.value + "[\"" + v.title + "\"]" + (isSelected(v.id.value) ? ':::objective_select' : '');
     }).join('\n');
     var linkText = entities.map(function (v) {
       return "click " + v.id.value + " \"./index.html#" + v.id.value + "\"";
@@ -780,7 +784,7 @@ function () {
       return v.id.value + " --> " + v.parent.value;
     }).join('\n');
     var roundText = actions.map(function (v) {
-      return v.id.value + "(\"" + v.title + "\"):::action";
+      return v.id.value + "(\"" + v.title + "<br>" + v.metaData.members.join(', ') + "\"):::action" + (isSelected(v.id.value) ? '_select' : '');
     }).join('\n');
     var actionLinkText = actions.map(function (v) {
       return "click " + v.id.value + " \"./index.html#" + v.id.value + "\"";
@@ -790,7 +794,7 @@ function () {
         return v.id.value + " --> " + p.value;
       }).join('\n');
     }).join('\n');
-    return ("\ngraph LR\nclassDef action fill:#ECFFEC, stroke: #93DB70;\n" + rectText + "\n" + linkText + "\n" + arrowText + "\n" + roundText + "\n" + actionLinkText + "\n" + actionArrowText + "\n  ").trim();
+    return ("\n%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '10px', 'lineColor': '#888'}}}%%\ngraph LR\nclassDef objective_select stroke-width:4px;\nclassDef action fill:#ECFFEC, stroke: #93DB70;\nclassDef action_select fill:#ECFFEC, stroke: #93DB70, stroke-width:4px;\nclassDef note fill:#FFFFEC, stroke: #DBDB93;\n" + rectText + "\n" + linkText + "\n" + arrowText + "\n" + roundText + "\n" + actionLinkText + "\n" + actionArrowText + "\n  ").trim();
   };
 
   return MermaidConvertor;
@@ -963,11 +967,16 @@ function () {
     this.mermaid = mermaid;
   }
 
-  MermaidTreeView.prototype.update = function () {
+  MermaidTreeView.prototype.update = function (id) {
     var _this = this;
 
     var idInHtml = document.querySelector('#rootIdSpan').value;
     var anyId = new AnyId_1.AnyId(idInHtml);
+    var selectedId = id || [document.querySelector('#selectedIdSpan')].filter(function (v) {
+      return v;
+    }).map(function (v) {
+      return new AnyId_1.AnyId(v.innerHTML);
+    })[0];
     var objectiveMap = {};
     var actionMap = {};
     var objectives = [];
@@ -1000,7 +1009,7 @@ function () {
       });
     });
     var element = document.querySelector("#profu");
-    var text = MermaidConvertor_1.MermaidConvertor.toMermaidScript(Object.values(objectiveMap), Object.values(actionMap));
+    var text = MermaidConvertor_1.MermaidConvertor.toMermaidScript(Object.values(objectiveMap), Object.values(actionMap), anyId, selectedId);
     this.mermaid.mermaidAPI.render('graphDiv', text, function (svg) {
       return element.innerHTML = svg;
     });
@@ -1136,6 +1145,7 @@ function () {
         };
       });
     });
+    this.mermaidTreeView.update(id);
   };
 
   PjfuVue.prototype.update = function () {
@@ -1672,6 +1682,10 @@ function htmlMain(dataStore) {
     mermaidTreeView.update();
     document.querySelector('#applyRootIdButton').addEventListener('click', function () {
       return mermaidTreeView.update();
+    });
+    document.querySelector('#applyTreeCenteredFromSelected').addEventListener('click', function () {
+      document.querySelector('#rootIdSpan').value = document.querySelector('#selectedIdSpan').innerHTML;
+      mermaidTreeView.update();
     });
   });
 }

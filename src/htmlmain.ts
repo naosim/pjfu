@@ -35,6 +35,10 @@ export function htmlMain(dataStore: DataStore) {
 
     mermaidTreeView.update();
     document.querySelector('#applyRootIdButton').addEventListener('click', () => mermaidTreeView.update());
+    document.querySelector('#applyTreeCenteredFromSelected').addEventListener('click', () => {
+      ((document.querySelector('#rootIdSpan') as unknown) as {value:string}).value = document.querySelector('#selectedIdSpan').innerHTML
+      mermaidTreeView.update()
+    });
   });
 }
 

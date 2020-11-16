@@ -11,11 +11,11 @@ export class MermaidTreeView {
     private actionRepository: Action.ReadRepository,
     private mermaid: any
   ) {
-    
   }
-  update() {
+  update(id?: AnyId) {
     const idInHtml = ((document.querySelector('#rootIdSpan') as unknown) as {value:string}).value;
     const anyId = new AnyId(idInHtml);
+    const selectedId: AnyId = id || [document.querySelector('#selectedIdSpan')].filter(v => v).map(v => new AnyId(v.innerHTML))[0]
     const objectiveMap: { [key: string]: Objective.Entity } = {}
     const actionMap: { [key: string]: Action.Entity } = {}
     var objectives: Objective.Entity[] = [];
@@ -46,7 +46,12 @@ export class MermaidTreeView {
       this.objectiveRepository.findParentsTree(p).forEach(v => objectiveMap[v.id.value] = v);
     })
     var element = document.querySelector("#profu");
-    var text = MermaidConvertor.toMermaidScript(Object.values(objectiveMap), Object.values(actionMap));  
+    var text = MermaidConvertor.toMermaidScript(
+      Object.values(objectiveMap), 
+      Object.values(actionMap), 
+      anyId,
+      selectedId
+    );  
     this.mermaid.mermaidAPI.render('graphDiv', text, (svg) => element.innerHTML = svg);
   }
 }
@@ -139,6 +144,7 @@ export class PjfuVue {
         this.data.editForm.links = action.metaData.links.map(v => ({name: v.name, path: v.path}))
       }
     )
+    this.mermaidTreeView.update(id);
   }
   update() {
     console.log('update');
