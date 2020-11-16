@@ -19,6 +19,8 @@ export class MermaidConvertor {
     const roundText = actions.map(v => `${v.id.value}("${v.title}<br>${v.metaData.members.join(', ')}"):::action${isSelected(v.id.value) ? '_select' : ''}`).join('\n');
     const actionLinkText = actions.map(v => `click ${v.id.value} "./index.html#${v.id.value}"`).join('\n');
     const actionArrowText = actions.map(v => v.parents.map(p => `${v.id.value} --> ${p.value}`).join('\n')).join('\n');
+    const noteText = actions.filter(v => v.note.isNotEmpty()).map(v => `${v.id.value}_note["${v.note.value.split('\n').join('<br>')}"]:::note`).join('\n');
+    const noteArrowText = actions.filter(v => v.note.isNotEmpty()).map(v => `${v.id.value}_note --- ${v.id.value}`).join('\n');
     return `
 %%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '10px', 'lineColor': '#888'}}}%%
 graph LR
@@ -32,6 +34,8 @@ ${arrowText}
 ${roundText}
 ${actionLinkText}
 ${actionArrowText}
+${noteText}
+${noteArrowText}
   `.trim();
 
   }

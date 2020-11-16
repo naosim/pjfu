@@ -9,7 +9,8 @@ export module Action {
       readonly id: Id,
       readonly title: string,
       readonly parents: Objective.Id[],
-      readonly metaData: MetaData
+      readonly metaData: MetaData,
+      readonly note:　Note
     ) {
       if (!title || title.trim().length == 0) {
         throw new Error('タイトルが空です');
@@ -20,7 +21,8 @@ export module Action {
         id: this.id.toObject(),
         title: this.title,
         parents: this.parents.map(v => v.toObject()),
-        metaData: this.metaData.toObject()
+        metaData: this.metaData.toObject(),
+        note: this.note.toObject()
       };
     }
   }
@@ -38,6 +40,17 @@ export module Action {
 
     eq(other: Id): boolean {
       return other && this.value === other.value;
+    }
+  }
+  export class Note implements StringValueObject {
+    constructor(
+      readonly value: string
+    ) { }
+    toObject(): any {
+      return this.value;
+    }
+    isNotEmpty(): boolean {
+      return this.value.trim().length > 0;
     }
   }
 

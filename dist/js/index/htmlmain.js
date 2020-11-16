@@ -261,11 +261,12 @@ var Action;
   var Entity =
   /** @class */
   function () {
-    function Entity(id, title, parents, metaData) {
+    function Entity(id, title, parents, metaData, note) {
       this.id = id;
       this.title = title;
       this.parents = parents;
       this.metaData = metaData;
+      this.note = note;
 
       if (!title || title.trim().length == 0) {
         throw new Error('タイトルが空です');
@@ -279,7 +280,8 @@ var Action;
         parents: this.parents.map(function (v) {
           return v.toObject();
         }),
-        metaData: this.metaData.toObject()
+        metaData: this.metaData.toObject(),
+        note: this.note.toObject()
       };
     };
 
@@ -311,6 +313,26 @@ var Action;
   }();
 
   Action.Id = Id;
+
+  var Note =
+  /** @class */
+  function () {
+    function Note(value) {
+      this.value = value;
+    }
+
+    Note.prototype.toObject = function () {
+      return this.value;
+    };
+
+    Note.prototype.isNotEmpty = function () {
+      return this.value.trim().length > 0;
+    };
+
+    return Note;
+  }();
+
+  Action.Note = Note;
 })(Action = exports.Action || (exports.Action = {}));
 },{}],"infra/datastore/DataStoreUtils.ts":[function(require,module,exports) {
 "use strict";
@@ -342,7 +364,7 @@ function () {
       return new Action_1.Action.Id(v);
     }), new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links ? v.metaData.links.map(function (v) {
       return new domain_1.Link(v.name, v.path);
-    }) : []));
+    }) : []), new Action_1.Action.Note(v.note || ''));
   };
 
   return DataStoreUtils;
@@ -794,7 +816,17 @@ function () {
         return v.id.value + " --> " + p.value;
       }).join('\n');
     }).join('\n');
-    return ("\n%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '10px', 'lineColor': '#888'}}}%%\ngraph LR\nclassDef objective_select stroke-width:4px;\nclassDef action fill:#ECFFEC, stroke: #93DB70;\nclassDef action_select fill:#ECFFEC, stroke: #93DB70, stroke-width:4px;\nclassDef note fill:#FFFFEC, stroke: #DBDB93;\n" + rectText + "\n" + linkText + "\n" + arrowText + "\n" + roundText + "\n" + actionLinkText + "\n" + actionArrowText + "\n  ").trim();
+    var noteText = actions.filter(function (v) {
+      return v.note.isNotEmpty();
+    }).map(function (v) {
+      return v.id.value + "_note[\"" + v.note.value.split('\n').join('<br>') + "\"]:::note";
+    }).join('\n');
+    var noteArrowText = actions.filter(function (v) {
+      return v.note.isNotEmpty();
+    }).map(function (v) {
+      return v.id.value + "_note --- " + v.id.value;
+    }).join('\n');
+    return ("\n%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '10px', 'lineColor': '#888'}}}%%\ngraph LR\nclassDef objective_select stroke-width:4px;\nclassDef action fill:#ECFFEC, stroke: #93DB70;\nclassDef action_select fill:#ECFFEC, stroke: #93DB70, stroke-width:4px;\nclassDef note fill:#FFFFEC, stroke: #DBDB93;\n" + rectText + "\n" + linkText + "\n" + arrowText + "\n" + roundText + "\n" + actionLinkText + "\n" + actionArrowText + "\n" + noteText + "\n" + noteArrowText + "\n  ").trim();
   };
 
   return MermaidConvertor;
@@ -1063,7 +1095,8 @@ function () {
         links: [{
           name: '',
           path: ''
-        }]
+        }],
+        note: ''
       }
     };
     this.init(Vue);
@@ -1127,6 +1160,7 @@ function () {
           path: v.path
         };
       });
+      _this.data.editForm.note = '';
     }, function (id) {
       var action = _this.actionRepository.findById(id);
 
@@ -1144,6 +1178,7 @@ function () {
           path: v.path
         };
       });
+      _this.data.editForm.note = action.note.value;
     });
     this.mermaidTreeView.update(id);
   };
@@ -1174,7 +1209,7 @@ function () {
 
       _this.objectiveRepository.update(newEntity, callbackOnSaved);
     }, function (id) {
-      var newEntity = new Action_1.Action.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get(), _this.data.editForm.detail.get());
+      var newEntity = new Action_1.Action.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get(), _this.data.editForm.detail.get(), new Action_1.Action.Note(_this.data.editForm.note));
 
       _this.actionRepository.update(newEntity, callbackOnSaved);
     });
@@ -1211,7 +1246,7 @@ function () {
     var _this = this;
 
     this.actionRepository.createId(function (err, id) {
-      var newEntity = new Action_1.Action.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get(), _this.data.editForm.detail.get());
+      var newEntity = new Action_1.Action.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get(), _this.data.editForm.detail.get(), new Action_1.Action.Note(_this.data.editForm.note));
 
       _this.actionRepository.insert(newEntity, function (e) {
         console.log('callback');

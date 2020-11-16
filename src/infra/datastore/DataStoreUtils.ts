@@ -27,7 +27,9 @@ export class DataStoreUtils {
       new MetaData(
         v.metaData.description,
         v.metaData.members || [],
-        v.metaData.links ? v.metaData.links.map(v => new Link(v.name, v.path)) : [])
+        v.metaData.links ? v.metaData.links.map(v => new Link(v.name, v.path)) : []
+      ),
+      new Action.Note(v.note || '')
     );
   }
 }
