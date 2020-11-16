@@ -172,70 +172,6 @@ function () {
 }();
 
 exports.Link = Link;
-},{}],"domain/Action.ts":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.Action = void 0;
-var Action;
-
-(function (Action) {
-  var Entity =
-  /** @class */
-  function () {
-    function Entity(id, title, parents, metaData) {
-      this.id = id;
-      this.title = title;
-      this.parents = parents;
-      this.metaData = metaData;
-
-      if (!title || title.trim().length == 0) {
-        throw new Error('タイトルが空です');
-      }
-    }
-
-    Entity.prototype.toObject = function () {
-      return {
-        id: this.id.toObject(),
-        title: this.title,
-        parents: this.parents.map(function (v) {
-          return v.toObject();
-        }),
-        metaData: this.metaData.toObject()
-      };
-    };
-
-    return Entity;
-  }();
-
-  Action.Entity = Entity;
-
-  var Id =
-  /** @class */
-  function () {
-    function Id(value) {
-      this.value = value;
-    }
-
-    Id.create = function (num) {
-      return new Id('A' + num);
-    };
-
-    Id.prototype.toObject = function () {
-      return this.value;
-    };
-
-    Id.prototype.eq = function (other) {
-      return other && this.value === other.value;
-    };
-
-    return Id;
-  }();
-
-  Action.Id = Id;
-})(Action = exports.Action || (exports.Action = {}));
 },{}],"domain/Objective.ts":[function(require,module,exports) {
 "use strict";
 
@@ -312,7 +248,287 @@ var Objective;
 
   Objective.Id = Id;
 })(Objective = exports.Objective || (exports.Objective = {}));
-},{"./domain":"domain/domain.ts"}],"infra/view/MermaidConvertor.ts":[function(require,module,exports) {
+},{"./domain":"domain/domain.ts"}],"domain/Action.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Action = void 0;
+var Action;
+
+(function (Action) {
+  var Entity =
+  /** @class */
+  function () {
+    function Entity(id, title, parents, metaData) {
+      this.id = id;
+      this.title = title;
+      this.parents = parents;
+      this.metaData = metaData;
+
+      if (!title || title.trim().length == 0) {
+        throw new Error('タイトルが空です');
+      }
+    }
+
+    Entity.prototype.toObject = function () {
+      return {
+        id: this.id.toObject(),
+        title: this.title,
+        parents: this.parents.map(function (v) {
+          return v.toObject();
+        }),
+        metaData: this.metaData.toObject()
+      };
+    };
+
+    return Entity;
+  }();
+
+  Action.Entity = Entity;
+
+  var Id =
+  /** @class */
+  function () {
+    function Id(value) {
+      this.value = value;
+    }
+
+    Id.create = function (num) {
+      return new Id('A' + num);
+    };
+
+    Id.prototype.toObject = function () {
+      return this.value;
+    };
+
+    Id.prototype.eq = function (other) {
+      return other && this.value === other.value;
+    };
+
+    return Id;
+  }();
+
+  Action.Id = Id;
+})(Action = exports.Action || (exports.Action = {}));
+},{}],"infra/datastore/DataStoreUtils.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.DataStoreUtils = void 0;
+
+var domain_1 = require("../../domain/domain");
+
+var Action_1 = require("../../domain/Action");
+
+var Objective_1 = require("../../domain/Objective");
+
+var DataStoreUtils =
+/** @class */
+function () {
+  function DataStoreUtils() {}
+
+  DataStoreUtils.dataToObjectiveEntity = function (v) {
+    return new Objective_1.Objective.Entity(new Objective_1.Objective.Id(v.id), v.title, v.parent ? new Objective_1.Objective.Id(v.parent) : null, new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links ? v.metaData.links.map(function (v) {
+      return new domain_1.Link(v.name, v.path);
+    }) : []));
+  };
+
+  DataStoreUtils.dataToActionEntity = function (v) {
+    return new Action_1.Action.Entity(new Objective_1.Objective.Id(v.id), v.title, v.parents.map(function (v) {
+      return new Action_1.Action.Id(v);
+    }), new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links ? v.metaData.links.map(function (v) {
+      return new domain_1.Link(v.name, v.path);
+    }) : []));
+  };
+
+  return DataStoreUtils;
+}();
+
+exports.DataStoreUtils = DataStoreUtils;
+},{"../../domain/domain":"domain/domain.ts","../../domain/Action":"domain/Action.ts","../../domain/Objective":"domain/Objective.ts"}],"infra/datastore/DataStoreLocalStorage.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.DataStoreLocalStorage = void 0;
+
+var Objective_1 = require("../../domain/Objective");
+
+var DataStoreUtils_1 = require("./DataStoreUtils");
+
+var DataStoreLocalStorage =
+/** @class */
+function () {
+  function DataStoreLocalStorage() {
+    this.callCount = 0;
+  }
+
+  DataStoreLocalStorage.prototype.findAll = function (callback) {
+    var _this = this;
+
+    this.findAllObjective(function (err, objectives) {
+      if (err) {
+        callback(err, null, null);
+        return;
+      }
+
+      _this.findAllAction(function (err, actions) {
+        if (err) {
+          callback(err, null, null);
+          return;
+        }
+
+        setTimeout(function () {
+          return callback(null, objectives, actions);
+        }, 100);
+      });
+    });
+  };
+
+  DataStoreLocalStorage.prototype.findAllObjective = function (callback) {
+    var _this = this;
+
+    if (this.callCount > 0) {
+      throw '2回目の呼出です';
+    }
+
+    var raw = localStorage.getItem('objectiveTree');
+
+    if (!raw) {
+      raw = JSON.stringify([Objective_1.Objective.Entity.root()].map(function (v) {
+        return v.toObject();
+      }));
+      localStorage.setItem('objectiveTree', raw);
+    }
+
+    console.log(raw);
+    this.list = JSON.parse(raw).map(function (v) {
+      return DataStoreUtils_1.DataStoreUtils.dataToObjectiveEntity(v);
+    });
+    setTimeout(function () {
+      return callback(null, _this.list);
+    }, 100);
+  };
+
+  DataStoreLocalStorage.prototype.findAllAction = function (callback) {
+    var _this = this;
+
+    if (this.callCount > 0) {
+      throw '2回目の呼出です';
+    }
+
+    var raw = localStorage.getItem('actionTree');
+
+    if (!raw) {
+      raw = '[]';
+      localStorage.setItem('actionTree', raw);
+    }
+
+    console.log(raw);
+    this.actions = JSON.parse(raw).map(function (v) {
+      return DataStoreUtils_1.DataStoreUtils.dataToActionEntity(v);
+    });
+    setTimeout(function () {
+      return callback(null, _this.actions);
+    }, 100);
+  };
+
+  DataStoreLocalStorage.prototype.updateObjective = function (entity, callback) {
+    for (var i = 0; i < this.list.length; i++) {
+      if (this.list[i].id.value == entity.id.value) {
+        this.list[i] = entity;
+        this.saveObjective();
+        setTimeout(function () {
+          return callback(null);
+        }, 100);
+        return;
+      }
+    }
+
+    setTimeout(function () {
+      return callback(new Error("entity not found: " + entity.id.value));
+    }, 100);
+  };
+
+  DataStoreLocalStorage.prototype.updateAction = function (entity, callback) {
+    for (var i = 0; i < this.actions.length; i++) {
+      if (this.actions[i].id.value == entity.id.value) {
+        this.actions[i] = entity;
+        this.saveAction();
+        setTimeout(function () {
+          return callback(null);
+        }, 100);
+        return;
+      }
+    }
+
+    setTimeout(function () {
+      return callback(new Error("entity not found: " + entity.id.value));
+    }, 100);
+  };
+
+  DataStoreLocalStorage.prototype.insertObjective = function (entity, callback) {
+    this.list.push(entity);
+    this.saveObjective();
+    setTimeout(function () {
+      return callback(null);
+    }, 100);
+  };
+
+  DataStoreLocalStorage.prototype.insertAction = function (entity, callback) {
+    this.actions.push(entity);
+    this.saveAction();
+    setTimeout(function () {
+      return callback(null);
+    }, 100);
+  };
+
+  DataStoreLocalStorage.prototype.removeObjective = function (id, callback) {
+    this.list = this.list.filter(function (v) {
+      return !v.id.eq(id);
+    });
+    this.saveObjective();
+    setTimeout(function () {
+      return callback(null);
+    }, 100);
+  };
+
+  DataStoreLocalStorage.prototype.removeAction = function (id, callback) {
+    this.actions = this.actions.filter(function (v) {
+      return !v.id.eq(id);
+    });
+    this.saveAction();
+    setTimeout(function () {
+      return callback(null);
+    }, 100);
+  };
+
+  DataStoreLocalStorage.prototype.saveObjective = function () {
+    var raw = JSON.stringify(this.list.map(function (v) {
+      return v.toObject();
+    }));
+    console.log(raw);
+    localStorage.setItem('objectiveTree', raw);
+  };
+
+  DataStoreLocalStorage.prototype.saveAction = function () {
+    var raw = JSON.stringify(this.actions.map(function (v) {
+      return v.toObject();
+    }));
+    console.log(raw);
+    localStorage.setItem('actionTree', raw);
+  };
+
+  return DataStoreLocalStorage;
+}();
+
+exports.DataStoreLocalStorage = DataStoreLocalStorage;
+},{"../../domain/Objective":"domain/Objective.ts","./DataStoreUtils":"infra/datastore/DataStoreUtils.ts"}],"infra/view/MermaidConvertor.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -815,202 +1031,7 @@ function () {
 }();
 
 exports.PjfuVue = PjfuVue;
-},{"../../domain/domain":"domain/domain.ts","../../domain/Action":"domain/Action.ts","../../domain/Objective":"domain/Objective.ts","./MermaidConvertor":"infra/view/MermaidConvertor.ts","./MetaDataConverter":"infra/view/MetaDataConverter.ts","./AnyId":"infra/view/AnyId.ts"}],"infra/infra.ts":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.DataStoreImpl = void 0;
-
-var domain_1 = require("../domain/domain");
-
-var Action_1 = require("../domain/Action");
-
-var Objective_1 = require("../domain/Objective");
-
-var DataStoreImpl =
-/** @class */
-function () {
-  function DataStoreImpl() {
-    this.callCount = 0;
-  }
-
-  DataStoreImpl.dataToObjectiveEntity = function (v) {
-    return new Objective_1.Objective.Entity(new Objective_1.Objective.Id(v.id), v.title, v.parent ? new Objective_1.Objective.Id(v.parent) : null, new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links ? v.metaData.links.map(function (v) {
-      return new domain_1.Link(v.name, v.path);
-    }) : []));
-  };
-
-  DataStoreImpl.dataToActionEntity = function (v) {
-    return new Action_1.Action.Entity(new Objective_1.Objective.Id(v.id), v.title, v.parents.map(function (v) {
-      return new Action_1.Action.Id(v);
-    }), new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links ? v.metaData.links.map(function (v) {
-      return new domain_1.Link(v.name, v.path);
-    }) : []));
-  };
-
-  DataStoreImpl.prototype.findAll = function (callback) {
-    var _this = this;
-
-    this.findAllObjective(function (err, objectives) {
-      if (err) {
-        callback(err, null, null);
-        return;
-      }
-
-      _this.findAllAction(function (err, actions) {
-        if (err) {
-          callback(err, null, null);
-          return;
-        }
-
-        setTimeout(function () {
-          return callback(null, objectives, actions);
-        }, 100);
-      });
-    });
-  };
-
-  DataStoreImpl.prototype.findAllObjective = function (callback) {
-    var _this = this;
-
-    if (this.callCount > 0) {
-      throw '2回目の呼出です';
-    }
-
-    var raw = localStorage.getItem('objectiveTree');
-
-    if (!raw) {
-      raw = JSON.stringify([Objective_1.Objective.Entity.root()].map(function (v) {
-        return v.toObject();
-      }));
-      localStorage.setItem('objectiveTree', raw);
-    }
-
-    console.log(raw);
-    this.list = JSON.parse(raw).map(function (v) {
-      return DataStoreImpl.dataToObjectiveEntity(v);
-    });
-    setTimeout(function () {
-      return callback(null, _this.list);
-    }, 100);
-  };
-
-  DataStoreImpl.prototype.findAllAction = function (callback) {
-    var _this = this;
-
-    if (this.callCount > 0) {
-      throw '2回目の呼出です';
-    }
-
-    var raw = localStorage.getItem('actionTree');
-
-    if (!raw) {
-      raw = '[]';
-      localStorage.setItem('actionTree', raw);
-    }
-
-    console.log(raw);
-    this.actions = JSON.parse(raw).map(function (v) {
-      return DataStoreImpl.dataToActionEntity(v);
-    });
-    setTimeout(function () {
-      return callback(null, _this.actions);
-    }, 100);
-  };
-
-  DataStoreImpl.prototype.updateObjective = function (entity, callback) {
-    for (var i = 0; i < this.list.length; i++) {
-      if (this.list[i].id.value == entity.id.value) {
-        this.list[i] = entity;
-        this.saveObjective();
-        setTimeout(function () {
-          return callback(null);
-        }, 100);
-        return;
-      }
-    }
-
-    setTimeout(function () {
-      return callback(new Error("entity not found: " + entity.id.value));
-    }, 100);
-  };
-
-  DataStoreImpl.prototype.updateAction = function (entity, callback) {
-    for (var i = 0; i < this.actions.length; i++) {
-      if (this.actions[i].id.value == entity.id.value) {
-        this.actions[i] = entity;
-        this.saveAction();
-        setTimeout(function () {
-          return callback(null);
-        }, 100);
-        return;
-      }
-    }
-
-    setTimeout(function () {
-      return callback(new Error("entity not found: " + entity.id.value));
-    }, 100);
-  };
-
-  DataStoreImpl.prototype.insertObjective = function (entity, callback) {
-    this.list.push(entity);
-    this.saveObjective();
-    setTimeout(function () {
-      return callback(null);
-    }, 100);
-  };
-
-  DataStoreImpl.prototype.insertAction = function (entity, callback) {
-    this.actions.push(entity);
-    this.saveAction();
-    setTimeout(function () {
-      return callback(null);
-    }, 100);
-  };
-
-  DataStoreImpl.prototype.removeObjective = function (id, callback) {
-    this.list = this.list.filter(function (v) {
-      return !v.id.eq(id);
-    });
-    this.saveObjective();
-    setTimeout(function () {
-      return callback(null);
-    }, 100);
-  };
-
-  DataStoreImpl.prototype.removeAction = function (id, callback) {
-    this.actions = this.actions.filter(function (v) {
-      return !v.id.eq(id);
-    });
-    this.saveAction();
-    setTimeout(function () {
-      return callback(null);
-    }, 100);
-  };
-
-  DataStoreImpl.prototype.saveObjective = function () {
-    var raw = JSON.stringify(this.list.map(function (v) {
-      return v.toObject();
-    }));
-    console.log(raw);
-    localStorage.setItem('objectiveTree', raw);
-  };
-
-  DataStoreImpl.prototype.saveAction = function () {
-    var raw = JSON.stringify(this.actions.map(function (v) {
-      return v.toObject();
-    }));
-    console.log(raw);
-    localStorage.setItem('actionTree', raw);
-  };
-
-  return DataStoreImpl;
-}();
-
-exports.DataStoreImpl = DataStoreImpl;
-},{"../domain/domain":"domain/domain.ts","../domain/Action":"domain/Action.ts","../domain/Objective":"domain/Objective.ts"}],"infra/InMemoryDataStore.ts":[function(require,module,exports) {
+},{"../../domain/domain":"domain/domain.ts","../../domain/Action":"domain/Action.ts","../../domain/Objective":"domain/Objective.ts","./MermaidConvertor":"infra/view/MermaidConvertor.ts","./MetaDataConverter":"infra/view/MetaDataConverter.ts","./AnyId":"infra/view/AnyId.ts"}],"infra/InMemoryDataStore.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1388,16 +1409,15 @@ function () {
 }();
 
 exports.ObjectiveRepositoryImpl = ObjectiveRepositoryImpl;
-},{"../domain/Objective":"domain/Objective.ts","./InMemoryDataStore":"infra/InMemoryDataStore.ts"}],"htmlmain.ts":[function(require,module,exports) {
+},{"../domain/Objective":"domain/Objective.ts","./InMemoryDataStore":"infra/InMemoryDataStore.ts"}],"main.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.main = void 0;
 
 var PjfuVue_1 = require("./infra/view/PjfuVue");
-
-var infra_1 = require("./infra/infra");
 
 var ActionRepositoryImpl_1 = require("./infra/ActionRepositoryImpl");
 
@@ -1405,39 +1425,48 @@ var ObjectiveRepositoryImpl_1 = require("./infra/ObjectiveRepositoryImpl");
 
 var AnyId_1 = require("./infra/view/AnyId");
 
-function q(selector) {
-  return document.querySelector(selector);
+function main(dataStore) {
+  dataStore.findAll(function (err, objectives, actions) {
+    var objectiveRepository = new ObjectiveRepositoryImpl_1.ObjectiveRepositoryImpl(dataStore, objectives);
+    var actionRepository = new ActionRepositoryImpl_1.ActionRepositoryImpl(dataStore, actions);
+    var mermaidTreeView = new PjfuVue_1.MermaidTreeView(objectiveRepository, actionRepository, window['mermaid'], {
+      rootIdSpan: document.querySelector('#rootIdSpan')
+    });
+    var pjfuVue = new PjfuVue_1.PjfuVue(objectiveRepository, actionRepository, mermaidTreeView, window['Vue']); // 編集フォームはURLのハッシュに従う
+
+    var updateFormByHash = function updateFormByHash() {
+      return pjfuVue.applyTargetId(new AnyId_1.AnyId(window.location.hash.slice(1)));
+    };
+
+    window.addEventListener('hashchange', updateFormByHash);
+
+    if (location.hash) {
+      updateFormByHash();
+    }
+
+    mermaidTreeView.update();
+    document.querySelector('#applyRootIdButton').addEventListener('click', function () {
+      return mermaidTreeView.update();
+    });
+  });
 }
 
-function qclick(selector, callback) {
-  return document.querySelector(selector).addEventListener('click', callback);
-}
+exports.main = main;
+},{"./infra/view/PjfuVue":"infra/view/PjfuVue.ts","./infra/ActionRepositoryImpl":"infra/ActionRepositoryImpl.ts","./infra/ObjectiveRepositoryImpl":"infra/ObjectiveRepositoryImpl.ts","./infra/view/AnyId":"infra/view/AnyId.ts"}],"htmlmain.ts":[function(require,module,exports) {
+"use strict";
 
-var dataStore = new infra_1.DataStoreImpl();
-dataStore.findAll(function (err, objectives, actions) {
-  var objectiveRepository = new ObjectiveRepositoryImpl_1.ObjectiveRepositoryImpl(dataStore, objectives);
-  var actionRepository = new ActionRepositoryImpl_1.ActionRepositoryImpl(dataStore, actions);
-  var mermaidTreeView = new PjfuVue_1.MermaidTreeView(objectiveRepository, actionRepository, mermaid, {
-    rootIdSpan: q('#rootIdSpan')
-  });
-  var pjfuVue = new PjfuVue_1.PjfuVue(objectiveRepository, actionRepository, mermaidTreeView, Vue); // 編集フォームはURLのハッシュに従う
-
-  var updateFormByHash = function updateFormByHash() {
-    return pjfuVue.applyTargetId(new AnyId_1.AnyId(window.location.hash.slice(1)));
-  };
-
-  window.addEventListener('hashchange', updateFormByHash);
-
-  if (location.hash) {
-    updateFormByHash();
-  }
-
-  mermaidTreeView.update();
-  qclick('#applyRootIdButton', function () {
-    return mermaidTreeView.update();
-  });
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
-},{"./infra/view/PjfuVue":"infra/view/PjfuVue.ts","./infra/infra":"infra/infra.ts","./infra/ActionRepositoryImpl":"infra/ActionRepositoryImpl.ts","./infra/ObjectiveRepositoryImpl":"infra/ObjectiveRepositoryImpl.ts","./infra/view/AnyId":"infra/view/AnyId.ts"}],"../../../../../../usr/local/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+
+var DataStoreLocalStorage_1 = require("./infra/datastore/DataStoreLocalStorage");
+
+var main_1 = require("./main"); // グローバルから使える
+
+
+window['DataStoreLocalStorage'] = DataStoreLocalStorage_1.DataStoreLocalStorage;
+window['main'] = main_1.main;
+},{"./infra/datastore/DataStoreLocalStorage":"infra/datastore/DataStoreLocalStorage.ts","./main":"main.ts"}],"../../../../../../usr/local/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -1465,7 +1494,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55111" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61603" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
