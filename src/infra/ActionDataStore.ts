@@ -1,7 +1,5 @@
 import { Action } from '../domain/domain';
 
-
-
 export interface ActionDataStore {
   // findAllAction(callback: (err: Error, entities: Action.Entity[]) => void): void;
   updateAction(entity: Action.Entity, callback: (err) => void);

@@ -1,6 +1,6 @@
 import { Action, MetaData, Objective } from '../domain/domain';
 import { MermaidConvertor } from '../MermaidConvertor';
-import { MetaDataConverter, MetaDataForm } from '../MetaDataConverter';
+import { MetaDataForm } from '../MetaDataConverter';
 import { ActionRepositoryImpl } from './ActionRepositoryImpl';
 import { AnyId } from './AnyId';
 import { ObjectiveRepositoryImpl } from './ObjectiveRepositoryImpl';

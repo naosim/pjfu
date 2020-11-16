@@ -1,7 +1,5 @@
 import { Objective } from '../domain/domain';
 
-
-
 export interface ObjectiveDataStore {
   // findAllObjective(callback: (err: Error, entities: Objective.Entity[]) => void): void;
   updateObjective(entity: Objective.Entity, callback: (err) => void);

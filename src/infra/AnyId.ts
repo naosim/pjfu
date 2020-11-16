@@ -1,6 +1,5 @@
 import { Action, Objective } from '../domain/domain';
 
-
 export class AnyId {
   constructor(private id: string) { }
   forEach<T>(

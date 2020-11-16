@@ -3,8 +3,6 @@ import {
   StringValueObject
 } from '../domain/domain';
 
-
-
 export class InMemoryDataStore<I extends StringValueObject, E extends EntityIf<I>> {
   private entityMap: { [key: string]: E; };
 

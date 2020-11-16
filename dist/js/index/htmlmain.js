@@ -1387,14 +1387,6 @@ function qclick(selector, callback) {
   return document.querySelector(selector).addEventListener('click', callback);
 }
 
-var isObjectiveId = function isObjectiveId(id) {
-  return id[0] == 'O';
-};
-
-var isActionId = function isActionId(id) {
-  return id[0] == 'A';
-};
-
 var dataStore = new infra_1.DataStoreImpl();
 dataStore.findAll(function (err, objectives, actions) {
   var objectiveRepository = new ObjectiveRepositoryImpl_1.ObjectiveRepositoryImpl(dataStore, objectives);
@@ -1402,18 +1394,23 @@ dataStore.findAll(function (err, objectives, actions) {
   var mermaidTreeView = new PjfuVue_1.MermaidTreeView(objectiveRepository, actionRepository, mermaid, {
     rootIdSpan: q('#rootIdSpan')
   });
-  var pjfuVue = new PjfuVue_1.PjfuVue(objectiveRepository, actionRepository, mermaidTreeView, Vue);
-  window.addEventListener('hashchange', function (e) {
-    pjfuVue.applyTargetId(new AnyId_1.AnyId(window.location.hash.slice(1)));
-  });
+  var pjfuVue = new PjfuVue_1.PjfuVue(objectiveRepository, actionRepository, mermaidTreeView, Vue); // 編集フォームはURLのハッシュに従う
+
+  var updateFormByHash = function updateFormByHash() {
+    return pjfuVue.applyTargetId(new AnyId_1.AnyId(window.location.hash.slice(1)));
+  };
+
+  window.addEventListener('hashchange', updateFormByHash);
+
+  if (location.hash) {
+    updateFormByHash();
+  }
+
   mermaidTreeView.update();
   qclick('#applyRootIdButton', function () {
-    mermaidTreeView.update();
+    return mermaidTreeView.update();
   });
-}); // dataStore.findAll callback
-
-if (location.hash) {// q('#targetId').value = window.location.hash.slice(1);
-}
+});
 },{"./infra/PjfuVue":"infra/PjfuVue.ts","./infra/infra":"infra/infra.ts","./infra/ActionRepositoryImpl":"infra/ActionRepositoryImpl.ts","./infra/ObjectiveRepositoryImpl":"infra/ObjectiveRepositoryImpl.ts","./infra/AnyId":"infra/AnyId.ts"}],"../../../../../../usr/local/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';

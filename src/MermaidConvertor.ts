@@ -3,7 +3,6 @@ import {
   Action
 } from './domain/domain';
 
-
 export class MermaidConvertor {
   static toMermaidScript(
     entities: Objective.Entity[],
