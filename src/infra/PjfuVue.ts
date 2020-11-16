@@ -4,6 +4,7 @@ import { MetaDataConverter, MetaDataForm } from '../MetaDataConverter';
 import { ActionRepositoryImpl } from './ActionRepositoryImpl';
 import { AnyId } from './AnyId';
 import { ObjectiveRepositoryImpl } from './ObjectiveRepositoryImpl';
+
 export class MermaidTreeView {
   constructor(
     private objectiveRepository: ObjectiveRepositoryImpl,
@@ -106,6 +107,9 @@ export class PjfuVue {
         onClickApplyRootIdButton: () => this.applyTreeId(),
         onClickUpdateButton: () => this.update(),
         onClickSubButton: () => this.createSub(),
+        onClickInsertObjectiveButton: () => this.insertObjective(),
+        onClickInsertActionButton: () => this.insertAction(),
+        onClickRemoveButton: () => this.remove()
       }
     });
     } catch(e) {
@@ -181,5 +185,80 @@ export class PjfuVue {
     this.data.editForm.id = '';
     this.data.editForm.title = ''
     this.data.editForm.detail.set(MetaData.empty());
+  }
+
+  insertObjective() {
+    this.objectiveRepository.createId((err, id) => {
+      const newEntity = new Objective.Entity(
+        id,
+        this.data.editForm.title,
+        this.data.editForm.parents.get()[0],
+        this.data.editForm.detail.get()
+      )
+      this.objectiveRepository.insert(newEntity, (e) => {
+        console.log('callback');
+        if(e) {
+          console.error(e);
+          alert('エラー: ' + e.message);
+          return;
+        }
+        this.mermaidTreeView.update();
+      });
+    })
+  }
+
+  insertAction() {
+    this.actionRepository.createId((err, id) => {
+      const newEntity = new Action.Entity(
+        id,
+        this.data.editForm.title,
+        this.data.editForm.parents.get(),
+        this.data.editForm.detail.get()
+      )
+      this.actionRepository.insert(newEntity, (e) => {
+        console.log('callback');
+        if(e) {
+          console.error(e);
+          alert('エラー: ' + e.message);
+          return;
+        }
+        this.mermaidTreeView.update();
+      });
+    })
+  }
+
+  remove() {
+    const anyId = new AnyId(this.data.editForm.id);
+    anyId.forEach(
+      id => {
+        if(this.actionRepository.hasChildren(id)) {
+          alert('子要素を消してください');
+          throw new Error('子要素を消してください');
+        }
+        this.objectiveRepository.remove(
+          id,
+          (e) => {
+            if(e) {
+              alert(e.message);
+              throw e;
+            }
+            this.mermaidTreeView.update();
+            // onTreeUpdate();
+          }
+        )
+      },
+      id => {
+        this.actionRepository.remove(
+          id,
+          (e) => {
+            if(e) {
+              alert(e.message);
+              throw e;
+            }
+            this.mermaidTreeView.update();
+          }
+        )
+      }
+    )
   }
 }

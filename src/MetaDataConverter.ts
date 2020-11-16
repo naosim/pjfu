@@ -2,8 +2,6 @@ import {
   Link,
   MetaData
 } from './domain/domain';
-import { textToObj } from './htmlmain';
-
 
 export class MetaDataForm {
   private value = '';
