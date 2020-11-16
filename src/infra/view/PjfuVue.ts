@@ -1,9 +1,11 @@
-import { Action, MetaData, Objective } from '../domain/domain';
-import { MermaidConvertor } from '../MermaidConvertor';
-import { MetaDataForm } from '../MetaDataConverter';
-import { ActionRepositoryImpl } from './ActionRepositoryImpl';
+import { MetaData } from '../../domain/domain';
+import { Action } from "../../domain/Action";
+import { Objective } from "../../domain/Objective";
+import { MermaidConvertor } from './MermaidConvertor';
+import { MetaDataForm } from './MetaDataConverter';
+import { ActionRepositoryImpl } from '../ActionRepositoryImpl';
 import { AnyId } from './AnyId';
-import { ObjectiveRepositoryImpl } from './ObjectiveRepositoryImpl';
+import { ObjectiveRepositoryImpl } from '../ObjectiveRepositoryImpl';
 
 export class MermaidTreeView {
   constructor(

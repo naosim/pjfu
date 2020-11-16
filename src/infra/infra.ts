@@ -1,9 +1,8 @@
 import {
   Link,
-  MetaData,
-  Objective,
-  Action
-} from '../domain/domain'
+  MetaData} from '../domain/domain'
+import { Action } from "../domain/Action";
+import { Objective } from "../domain/Objective";
 import { DataStore } from './DataStore';
 
 export class DataStoreImpl implements DataStore {

@@ -1,8 +1,8 @@
-import { Objective } from '../domain/domain';
+import { Objective } from "../domain/Objective";
 import { InMemoryDataStore } from './InMemoryDataStore';
 import { ObjectiveDataStore } from "./ObjectiveDataStore";
 
-export class ObjectiveRepositoryImpl {
+export class ObjectiveRepositoryImpl implements Objective.Repository {
   private inMemoryObjectiveDataStore: InMemoryDataStore<Objective.Id, Objective.Entity>;
   private parentMap: { [key: string]: Objective.Id[]; } = {}; //key:親, value: 子たち
 

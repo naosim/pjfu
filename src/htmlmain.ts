@@ -1,4 +1,4 @@
-import {MermaidTreeView, PjfuVue} from './infra/PjfuVue'
+import {MermaidTreeView, PjfuVue} from './infra/view/PjfuVue'
 
 import {
   DataStoreImpl
@@ -6,7 +6,7 @@ import {
 import { DataStore } from "./infra/DataStore";
 import { ActionRepositoryImpl } from "./infra/ActionRepositoryImpl";
 import { ObjectiveRepositoryImpl } from "./infra/ObjectiveRepositoryImpl";
-import { AnyId } from './infra/AnyId';
+import { AnyId } from './infra/view/AnyId';
 declare const mermaid: any;
 declare var Vue: any;
 

@@ -1,4 +1,5 @@
-import { Action, Objective } from '../domain/domain';
+import { Action } from "../../domain/Action";
+import { Objective } from "../../domain/Objective";
 
 export class AnyId {
   constructor(private id: string) { }

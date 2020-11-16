@@ -123,7 +123,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Action = exports.Objective = exports.Link = exports.MetaData = void 0;
+exports.Link = exports.MetaData = void 0;
 
 var MetaData =
 /** @class */
@@ -172,73 +172,13 @@ function () {
 }();
 
 exports.Link = Link;
-var Objective;
+},{}],"domain/Action.ts":[function(require,module,exports) {
+"use strict";
 
-(function (Objective) {
-  var Entity =
-  /** @class */
-  function () {
-    function Entity(id, title, parent, metaData) {
-      this.id = id;
-      this.title = title;
-      this.parent = parent;
-      this.metaData = metaData;
-      this.isRoot = parent ? false : true;
-      this.isNotRoot = !this.isRoot;
-
-      if (id.eq(parent)) {
-        throw new Error('IDとparentが同一です');
-      }
-
-      if (!title || title.trim().length == 0) {
-        throw new Error('タイトルが空です');
-      }
-    }
-
-    Entity.prototype.toObject = function () {
-      return {
-        id: this.id.toObject(),
-        title: this.title,
-        parent: this.parent ? this.parent.toObject() : null,
-        metaData: this.metaData.toObject()
-      };
-    };
-
-    Entity.root = function () {
-      return new Entity(Id.create(0), 'root', null, MetaData.empty());
-    };
-
-    return Entity;
-  }();
-
-  Objective.Entity = Entity;
-
-  var Id =
-  /** @class */
-  function () {
-    function Id(value) {
-      this.value = value;
-      this._class = 'Objective.Id';
-    }
-
-    Id.create = function (num) {
-      return new Id('O' + num);
-    };
-
-    Id.prototype.toObject = function () {
-      return this.value;
-    };
-
-    Id.prototype.eq = function (other) {
-      return other && this.value === other.value;
-    };
-
-    return Id;
-  }();
-
-  Objective.Id = Id;
-})(Objective = exports.Objective || (exports.Objective = {}));
-
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Action = void 0;
 var Action;
 
 (function (Action) {
@@ -296,7 +236,83 @@ var Action;
 
   Action.Id = Id;
 })(Action = exports.Action || (exports.Action = {}));
-},{}],"MermaidConvertor.ts":[function(require,module,exports) {
+},{}],"domain/Objective.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Objective = void 0;
+
+var domain_1 = require("./domain");
+
+var Objective;
+
+(function (Objective) {
+  var Entity =
+  /** @class */
+  function () {
+    function Entity(id, title, parent, metaData) {
+      this.id = id;
+      this.title = title;
+      this.parent = parent;
+      this.metaData = metaData;
+      this.isRoot = parent ? false : true;
+      this.isNotRoot = !this.isRoot;
+
+      if (id.eq(parent)) {
+        throw new Error('IDとparentが同一です');
+      }
+
+      if (!title || title.trim().length == 0) {
+        throw new Error('タイトルが空です');
+      }
+    }
+
+    Entity.prototype.toObject = function () {
+      return {
+        id: this.id.toObject(),
+        title: this.title,
+        parent: this.parent ? this.parent.toObject() : null,
+        metaData: this.metaData.toObject()
+      };
+    };
+
+    Entity.root = function () {
+      return new Entity(Id.create(0), 'root', null, domain_1.MetaData.empty());
+    };
+
+    return Entity;
+  }();
+
+  Objective.Entity = Entity;
+
+  var Id =
+  /** @class */
+  function () {
+    function Id(value) {
+      this.value = value;
+      this._class = 'Objective.Id';
+    }
+
+    Id.create = function (num) {
+      return new Id('O' + num);
+    };
+
+    Id.prototype.toObject = function () {
+      return this.value;
+    };
+
+    Id.prototype.eq = function (other) {
+      return other && this.value === other.value;
+    };
+
+    return Id;
+  }();
+
+  Objective.Id = Id;
+})(Objective = exports.Objective || (exports.Objective = {}));
+},{"./domain":"domain/domain.ts"}],"infra/view/MermaidConvertor.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -343,7 +359,7 @@ function () {
 }();
 
 exports.MermaidConvertor = MermaidConvertor;
-},{}],"MetaDataConverter.ts":[function(require,module,exports) {
+},{}],"infra/view/MetaDataConverter.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -351,7 +367,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.MetaDataConverter = exports.MetaDataForm = void 0;
 
-var domain_1 = require("./domain/domain");
+var domain_1 = require("../../domain/domain");
 
 var MetaDataForm =
 /** @class */
@@ -439,7 +455,7 @@ function () {
 }();
 
 exports.MetaDataConverter = MetaDataConverter;
-},{"./domain/domain":"domain/domain.ts"}],"infra/AnyId.ts":[function(require,module,exports) {
+},{"../../domain/domain":"domain/domain.ts"}],"infra/view/AnyId.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -447,7 +463,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.AnyId = void 0;
 
-var domain_1 = require("../domain/domain");
+var Action_1 = require("../../domain/Action");
+
+var Objective_1 = require("../../domain/Objective");
 
 var AnyId =
 /** @class */
@@ -458,9 +476,9 @@ function () {
 
   AnyId.prototype.forEach = function (objectiveCallback, actionCallback) {
     if (this.id[0] == 'O') {
-      return objectiveCallback(new domain_1.Objective.Id(this.id));
+      return objectiveCallback(new Objective_1.Objective.Id(this.id));
     } else if (this.id[0] == 'A') {
-      return actionCallback(new domain_1.Action.Id(this.id));
+      return actionCallback(new Action_1.Action.Id(this.id));
     } else {
       throw new Error('未知のID: ' + this.id);
     }
@@ -478,7 +496,7 @@ function () {
 }();
 
 exports.AnyId = AnyId;
-},{"../domain/domain":"domain/domain.ts"}],"infra/PjfuVue.ts":[function(require,module,exports) {
+},{"../../domain/Action":"domain/Action.ts","../../domain/Objective":"domain/Objective.ts"}],"infra/view/PjfuVue.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -486,11 +504,15 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.PjfuVue = exports.ParentsForm = exports.MermaidTreeView = void 0;
 
-var domain_1 = require("../domain/domain");
+var domain_1 = require("../../domain/domain");
 
-var MermaidConvertor_1 = require("../MermaidConvertor");
+var Action_1 = require("../../domain/Action");
 
-var MetaDataConverter_1 = require("../MetaDataConverter");
+var Objective_1 = require("../../domain/Objective");
+
+var MermaidConvertor_1 = require("./MermaidConvertor");
+
+var MetaDataConverter_1 = require("./MetaDataConverter");
 
 var AnyId_1 = require("./AnyId");
 
@@ -514,9 +536,9 @@ function () {
     var objectives = [];
     var parents = null;
     anyId.forEach(function (id) {
-      parents = [new domain_1.Objective.Id(idInHtml)];
+      parents = [new Objective_1.Objective.Id(idInHtml)];
     }, function (id) {
-      var current = _this.actionRepository.findById(new domain_1.Action.Id(idInHtml));
+      var current = _this.actionRepository.findById(new Action_1.Action.Id(idInHtml));
 
       parents = current.parents;
       parents.forEach(function (p) {
@@ -567,7 +589,7 @@ function () {
 
   ParentsForm.prototype.get = function () {
     return this.value.split(',').map(function (v) {
-      return new domain_1.Objective.Id(v.trim());
+      return new Objective_1.Objective.Id(v.trim());
     });
   };
 
@@ -701,18 +723,18 @@ function () {
     }
 
     anyId.forEach(function (id) {
-      var newEntity = new domain_1.Objective.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get()[0], _this.data.editForm.detail.get());
+      var newEntity = new Objective_1.Objective.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get()[0], _this.data.editForm.detail.get());
 
       _this.objectiveRepository.update(newEntity, callbackOnSaved);
     }, function (id) {
-      var newEntity = new domain_1.Action.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get(), _this.data.editForm.detail.get());
+      var newEntity = new Action_1.Action.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get(), _this.data.editForm.detail.get());
 
       _this.actionRepository.update(newEntity, callbackOnSaved);
     });
   };
 
   PjfuVue.prototype.createSub = function () {
-    this.data.editForm.parents.set([new domain_1.Objective.Id(this.data.editForm.id)]);
+    this.data.editForm.parents.set([new Objective_1.Objective.Id(this.data.editForm.id)]);
     this.data.editForm.id = '';
     this.data.editForm.title = '';
     this.data.editForm.detail.set(domain_1.MetaData.empty());
@@ -722,7 +744,7 @@ function () {
     var _this = this;
 
     this.objectiveRepository.createId(function (err, id) {
-      var newEntity = new domain_1.Objective.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get()[0], _this.data.editForm.detail.get());
+      var newEntity = new Objective_1.Objective.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get()[0], _this.data.editForm.detail.get());
 
       _this.objectiveRepository.insert(newEntity, function (e) {
         console.log('callback');
@@ -742,7 +764,7 @@ function () {
     var _this = this;
 
     this.actionRepository.createId(function (err, id) {
-      var newEntity = new domain_1.Action.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get(), _this.data.editForm.detail.get());
+      var newEntity = new Action_1.Action.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get(), _this.data.editForm.detail.get());
 
       _this.actionRepository.insert(newEntity, function (e) {
         console.log('callback');
@@ -793,7 +815,7 @@ function () {
 }();
 
 exports.PjfuVue = PjfuVue;
-},{"../domain/domain":"domain/domain.ts","../MermaidConvertor":"MermaidConvertor.ts","../MetaDataConverter":"MetaDataConverter.ts","./AnyId":"infra/AnyId.ts"}],"infra/infra.ts":[function(require,module,exports) {
+},{"../../domain/domain":"domain/domain.ts","../../domain/Action":"domain/Action.ts","../../domain/Objective":"domain/Objective.ts","./MermaidConvertor":"infra/view/MermaidConvertor.ts","./MetaDataConverter":"infra/view/MetaDataConverter.ts","./AnyId":"infra/view/AnyId.ts"}],"infra/infra.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -803,6 +825,10 @@ exports.DataStoreImpl = void 0;
 
 var domain_1 = require("../domain/domain");
 
+var Action_1 = require("../domain/Action");
+
+var Objective_1 = require("../domain/Objective");
+
 var DataStoreImpl =
 /** @class */
 function () {
@@ -811,14 +837,14 @@ function () {
   }
 
   DataStoreImpl.dataToObjectiveEntity = function (v) {
-    return new domain_1.Objective.Entity(new domain_1.Objective.Id(v.id), v.title, v.parent ? new domain_1.Objective.Id(v.parent) : null, new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links ? v.metaData.links.map(function (v) {
+    return new Objective_1.Objective.Entity(new Objective_1.Objective.Id(v.id), v.title, v.parent ? new Objective_1.Objective.Id(v.parent) : null, new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links ? v.metaData.links.map(function (v) {
       return new domain_1.Link(v.name, v.path);
     }) : []));
   };
 
   DataStoreImpl.dataToActionEntity = function (v) {
-    return new domain_1.Action.Entity(new domain_1.Objective.Id(v.id), v.title, v.parents.map(function (v) {
-      return new domain_1.Action.Id(v);
+    return new Action_1.Action.Entity(new Objective_1.Objective.Id(v.id), v.title, v.parents.map(function (v) {
+      return new Action_1.Action.Id(v);
     }), new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links ? v.metaData.links.map(function (v) {
       return new domain_1.Link(v.name, v.path);
     }) : []));
@@ -856,7 +882,7 @@ function () {
     var raw = localStorage.getItem('objectiveTree');
 
     if (!raw) {
-      raw = JSON.stringify([domain_1.Objective.Entity.root()].map(function (v) {
+      raw = JSON.stringify([Objective_1.Objective.Entity.root()].map(function (v) {
         return v.toObject();
       }));
       localStorage.setItem('objectiveTree', raw);
@@ -984,7 +1010,7 @@ function () {
 }();
 
 exports.DataStoreImpl = DataStoreImpl;
-},{"../domain/domain":"domain/domain.ts"}],"infra/InMemoryDataStore.ts":[function(require,module,exports) {
+},{"../domain/domain":"domain/domain.ts","../domain/Action":"domain/Action.ts","../domain/Objective":"domain/Objective.ts"}],"infra/InMemoryDataStore.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1054,7 +1080,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.ActionRepositoryImpl = void 0;
 
-var domain_1 = require("../domain/domain");
+var Action_1 = require("../domain/Action");
 
 var InMemoryDataStore_1 = require("./InMemoryDataStore");
 
@@ -1072,7 +1098,7 @@ function () {
   ActionRepositoryImpl.prototype.createId = function (callback) {
     var num = Math.floor(Date.now() / 1000);
     setTimeout(function () {
-      return callback(null, domain_1.Action.Id.create(num));
+      return callback(null, Action_1.Action.Id.create(num));
     }, 100);
   };
 
@@ -1181,7 +1207,7 @@ function () {
 }();
 
 exports.ActionRepositoryImpl = ActionRepositoryImpl;
-},{"../domain/domain":"domain/domain.ts","./InMemoryDataStore":"infra/InMemoryDataStore.ts"}],"infra/ObjectiveRepositoryImpl.ts":[function(require,module,exports) {
+},{"../domain/Action":"domain/Action.ts","./InMemoryDataStore":"infra/InMemoryDataStore.ts"}],"infra/ObjectiveRepositoryImpl.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1189,7 +1215,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.ObjectiveRepositoryImpl = void 0;
 
-var domain_1 = require("../domain/domain");
+var Objective_1 = require("../domain/Objective");
 
 var InMemoryDataStore_1 = require("./InMemoryDataStore");
 
@@ -1207,7 +1233,7 @@ function () {
   ObjectiveRepositoryImpl.prototype.createId = function (callback) {
     var num = Math.floor(Date.now() / 1000);
     setTimeout(function () {
-      return callback(null, domain_1.Objective.Id.create(num));
+      return callback(null, Objective_1.Objective.Id.create(num));
     }, 100);
   };
 
@@ -1362,14 +1388,14 @@ function () {
 }();
 
 exports.ObjectiveRepositoryImpl = ObjectiveRepositoryImpl;
-},{"../domain/domain":"domain/domain.ts","./InMemoryDataStore":"infra/InMemoryDataStore.ts"}],"htmlmain.ts":[function(require,module,exports) {
+},{"../domain/Objective":"domain/Objective.ts","./InMemoryDataStore":"infra/InMemoryDataStore.ts"}],"htmlmain.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var PjfuVue_1 = require("./infra/PjfuVue");
+var PjfuVue_1 = require("./infra/view/PjfuVue");
 
 var infra_1 = require("./infra/infra");
 
@@ -1377,7 +1403,7 @@ var ActionRepositoryImpl_1 = require("./infra/ActionRepositoryImpl");
 
 var ObjectiveRepositoryImpl_1 = require("./infra/ObjectiveRepositoryImpl");
 
-var AnyId_1 = require("./infra/AnyId");
+var AnyId_1 = require("./infra/view/AnyId");
 
 function q(selector) {
   return document.querySelector(selector);
@@ -1411,7 +1437,7 @@ dataStore.findAll(function (err, objectives, actions) {
     return mermaidTreeView.update();
   });
 });
-},{"./infra/PjfuVue":"infra/PjfuVue.ts","./infra/infra":"infra/infra.ts","./infra/ActionRepositoryImpl":"infra/ActionRepositoryImpl.ts","./infra/ObjectiveRepositoryImpl":"infra/ObjectiveRepositoryImpl.ts","./infra/AnyId":"infra/AnyId.ts"}],"../../../../../../usr/local/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./infra/view/PjfuVue":"infra/view/PjfuVue.ts","./infra/infra":"infra/infra.ts","./infra/ActionRepositoryImpl":"infra/ActionRepositoryImpl.ts","./infra/ObjectiveRepositoryImpl":"infra/ObjectiveRepositoryImpl.ts","./infra/view/AnyId":"infra/view/AnyId.ts"}],"../../../../../../usr/local/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;

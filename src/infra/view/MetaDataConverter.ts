@@ -1,7 +1,7 @@
 import {
   Link,
   MetaData
-} from './domain/domain';
+} from '../../domain/domain';
 
 export class MetaDataForm {
   private value = '';

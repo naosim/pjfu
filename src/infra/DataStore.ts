@@ -1,7 +1,5 @@
-import {
-  Objective,
-  Action
-} from '../domain/domain';
+import { Action } from "../domain/Action";
+import { Objective } from "../domain/Objective";
 import { ActionDataStore } from './ActionDataStore';
 import { ObjectiveDataStore } from './ObjectiveDataStore';
 

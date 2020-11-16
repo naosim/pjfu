@@ -1,11 +1,9 @@
-import {
-  Objective,
-  Action
-} from '../domain/domain';
+import { Action } from "../domain/Action";
+import { Objective } from "../domain/Objective";
 import { InMemoryDataStore } from './InMemoryDataStore';
 import { ActionDataStore } from "./ActionDataStore";
 
-export class ActionRepositoryImpl {
+export class ActionRepositoryImpl implements Action.Repository {
   private inMemoryActionDataStore: InMemoryDataStore<Action.Id, Action.Entity>;
   private parentMap: { [key: string]: Action.Id[]; } = {}; //key:親, value: 子たち
 

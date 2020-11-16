@@ -1,4 +1,4 @@
-import { Objective } from '../domain/domain';
+import { Objective } from "../domain/Objective";
 
 export interface ObjectiveDataStore {
   // findAllObjective(callback: (err: Error, entities: Objective.Entity[]) => void): void;
