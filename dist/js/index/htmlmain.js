@@ -123,7 +123,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Link = exports.MetaData = exports.Note = void 0;
+exports.Link = exports.MetaData = exports.Task = exports.TaskLimitDate = exports.Note = void 0;
 
 var Note =
 /** @class */
@@ -149,14 +149,51 @@ function () {
 
 exports.Note = Note;
 
+var TaskLimitDate =
+/** @class */
+function () {
+  function TaskLimitDate(raw) {
+    this.raw = raw;
+  }
+
+  TaskLimitDate.prototype.toObject = function () {
+    return this.raw;
+  };
+
+  return TaskLimitDate;
+}();
+
+exports.TaskLimitDate = TaskLimitDate;
+
+var Task =
+/** @class */
+function () {
+  function Task(limitDate, title) {
+    this.limitDate = limitDate;
+    this.title = title;
+  }
+
+  Task.prototype.toObject = function () {
+    return {
+      limitDate: this.limitDate.toObject(),
+      title: this.title
+    };
+  };
+
+  return Task;
+}();
+
+exports.Task = Task;
+
 var MetaData =
 /** @class */
 function () {
-  function MetaData(description, members, links, note) {
+  function MetaData(description, members, links, note, tasks) {
     this.description = description;
     this.members = members;
     this.links = links;
     this.note = note;
+    this.tasks = tasks;
   }
 
   MetaData.prototype.toObject = function () {
@@ -166,12 +203,15 @@ function () {
       links: this.links.map(function (v) {
         return v.toObject();
       }),
-      note: this.note.toObject()
+      note: this.note.toObject(),
+      tasks: this.tasks.map(function (v) {
+        return v.toObject();
+      })
     };
   };
 
   MetaData.empty = function () {
-    return new MetaData('', [], [], Note.empty());
+    return new MetaData('', [], [], Note.empty(), []);
   };
 
   return MetaData;
@@ -360,7 +400,9 @@ function () {
   DataStoreUtils.dataToObjectiveEntity = function (v) {
     return new Objective_1.Objective.Entity(new Objective_1.Objective.Id(v.id), v.title, v.parent ? new Objective_1.Objective.Id(v.parent) : null, new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links ? v.metaData.links.map(function (v) {
       return new domain_1.Link(v.name, v.path);
-    }) : [], new domain_1.Note(v.note || v.metaData.note || '')));
+    }) : [], new domain_1.Note(v.note || v.metaData.note || ''), v.metaData.tasks ? v.metaData.tasks.map(function (v) {
+      return new domain_1.Task(new domain_1.TaskLimitDate(v.limitDate), v.title);
+    }) : []));
   };
 
   DataStoreUtils.dataToActionEntity = function (v) {
@@ -368,7 +410,9 @@ function () {
       return new Action_1.Action.Id(v);
     }), new domain_1.MetaData(v.metaData.description, v.metaData.members || [], v.metaData.links ? v.metaData.links.map(function (v) {
       return new domain_1.Link(v.name, v.path);
-    }) : [], new domain_1.Note(v.note || v.metaData.note || '')));
+    }) : [], new domain_1.Note(v.note || v.metaData.note || ''), v.metaData.tasks ? v.metaData.tasks.map(function (v) {
+      return new domain_1.Task(new domain_1.TaskLimitDate(v.limitDate), v.title);
+    }) : []));
   };
 
   return DataStoreUtils;
@@ -874,7 +918,7 @@ function () {
 
   MetaDataConverter.toMetaData = function (text) {
     if (text.trim()[0] != '#') {
-      return new domain_1.MetaData(text, [], [], domain_1.Note.empty());
+      return new domain_1.MetaData(text, [], [], domain_1.Note.empty(), []);
     }
 
     var obj = MetaDataConverter.textToObj(text);
@@ -883,13 +927,17 @@ function () {
       return v.trim();
     }) : [], obj['リンク'] ? obj['リンク'].map(function (v) {
       return new domain_1.Link(v.name, v.path);
-    }) : [], new domain_1.Note(obj['ノート'] || ''));
+    }) : [], new domain_1.Note(obj['ノート'] || ''), obj['マイルストーン'] ? obj['マイルストーン'].split('\n').map(function (v) {
+      return new domain_1.Task(new domain_1.TaskLimitDate(v.slice(0, v.indexOf(' '))), v.slice(v.indexOf(' ')).trim());
+    }) : []);
   };
 
   MetaDataConverter.toText = function (metaData) {
     return ['# 説明: \n' + metaData.description, '', '# 担当: ' + metaData.members.join(', '), '# リンク: \n' + metaData.links.map(function (v) {
       return "- [" + v.name + "](" + v.path + ")";
-    }), '# ノート: \n' + metaData.note.value].join('\n');
+    }), '# ノート: \n' + metaData.note.value, '# マイルストーン: \n' + metaData.tasks.map(function (v) {
+      return v.limitDate.raw + " " + v.title;
+    })].join('\n');
   };
 
   MetaDataConverter.textToObj = function (text) {

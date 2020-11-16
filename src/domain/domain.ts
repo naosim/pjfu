@@ -22,12 +22,30 @@ export class Note implements StringValueObject {
   }
 }
 
+export class TaskLimitDate {
+  constructor(readonly raw: string) {}
+  toObject(): any {
+    return this.raw;
+  }
+}
+
+export class Task {
+  constructor(readonly limitDate: TaskLimitDate, readonly title: string) {}
+  toObject(): any {
+    return {
+      limitDate: this.limitDate.toObject(),
+      title: this.title
+    }
+  }
+}
+
 export class MetaData {
   constructor(
     readonly description: string,
     readonly members: string[],
     readonly links: Link[],
-    readonly note: Note
+    readonly note: Note,
+    readonly tasks: Task[]
   ) {}
 
   toObject(): any {
@@ -35,11 +53,12 @@ export class MetaData {
       description: this.description,
       members: this.members,
       links: this.links.map(v => v.toObject()),
-      note: this.note.toObject()
+      note: this.note.toObject(),
+      tasks: this.tasks.map(v => v.toObject())
     }
   }
   static empty(): MetaData {
-    return new MetaData('', [], [], Note.empty())
+    return new MetaData('', [], [], Note.empty(), [])
   }
 }
 
