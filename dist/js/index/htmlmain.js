@@ -349,7 +349,174 @@ function () {
 }();
 
 exports.DataStoreUtils = DataStoreUtils;
-},{"../../domain/domain":"domain/domain.ts","../../domain/Action":"domain/Action.ts","../../domain/Objective":"domain/Objective.ts"}],"infra/datastore/DataStoreLocalStorage.ts":[function(require,module,exports) {
+},{"../../domain/domain":"domain/domain.ts","../../domain/Action":"domain/Action.ts","../../domain/Objective":"domain/Objective.ts"}],"infra/datastore/DataStoreGithub.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.DataStoreGithubIssue = void 0;
+
+var Objective_1 = require("../../domain/Objective");
+
+var DataStoreUtils_1 = require("./DataStoreUtils");
+
+var DataStoreGithubIssue =
+/** @class */
+function () {
+  function DataStoreGithubIssue(objectiveIssueNumber, actionIssueNumber, issueRepository) {
+    this.objectiveIssueNumber = objectiveIssueNumber;
+    this.actionIssueNumber = actionIssueNumber;
+    this.issueRepository = issueRepository;
+    this.callCount = 0;
+  }
+
+  DataStoreGithubIssue.prototype.findAll = function (callback) {
+    var _this = this;
+
+    this.findAllObjective(function (err, objectives) {
+      if (err) {
+        callback(err, null, null);
+        return;
+      }
+
+      _this.findAllAction(function (err, actions) {
+        if (err) {
+          callback(err, null, null);
+          return;
+        }
+
+        setTimeout(function () {
+          return callback(null, objectives, actions);
+        }, 100);
+      });
+    });
+  };
+
+  DataStoreGithubIssue.prototype.findAllObjective = function (callback) {
+    var _this = this;
+
+    if (this.callCount > 0) {
+      throw '2回目の呼出です';
+    }
+
+    this.issueRepository.getIssue(this.objectiveIssueNumber, function (err, issue) {
+      if (err) {
+        callback(err, null);
+        return;
+      }
+
+      var raw = issue.body;
+
+      if (!raw || raw.trim().length == 0) {
+        raw = JSON.stringify([Objective_1.Objective.Entity.root()].map(function (v) {
+          return v.toObject();
+        }));
+      }
+
+      console.log(raw);
+      _this.list = JSON.parse(raw).map(function (v) {
+        return DataStoreUtils_1.DataStoreUtils.dataToObjectiveEntity(v);
+      });
+      callback(null, _this.list);
+    });
+  };
+
+  DataStoreGithubIssue.prototype.findAllAction = function (callback) {
+    var _this = this;
+
+    if (this.callCount > 0) {
+      throw '2回目の呼出です';
+    }
+
+    this.issueRepository.getIssue(this.actionIssueNumber, function (err, issue) {
+      var raw = issue.body;
+
+      if (!raw || raw.trim().length == 0) {
+        raw = '[]';
+      }
+
+      console.log(raw);
+      _this.actions = JSON.parse(raw).map(function (v) {
+        return DataStoreUtils_1.DataStoreUtils.dataToActionEntity(v);
+      });
+      callback(null, _this.actions);
+    });
+  };
+
+  DataStoreGithubIssue.prototype.updateObjective = function (entity, callback) {
+    for (var i = 0; i < this.list.length; i++) {
+      if (this.list[i].id.value == entity.id.value) {
+        this.list[i] = entity;
+        this.saveObjective(callback);
+        return;
+      }
+    }
+
+    setTimeout(function () {
+      return callback(new Error("entity not found: " + entity.id.value));
+    }, 100);
+  };
+
+  DataStoreGithubIssue.prototype.updateAction = function (entity, callback) {
+    for (var i = 0; i < this.actions.length; i++) {
+      if (this.actions[i].id.value == entity.id.value) {
+        this.actions[i] = entity;
+        this.saveAction(callback);
+        return;
+      }
+    }
+
+    setTimeout(function () {
+      return callback(new Error("entity not found: " + entity.id.value));
+    }, 100);
+  };
+
+  DataStoreGithubIssue.prototype.insertObjective = function (entity, callback) {
+    this.list.push(entity);
+    this.saveObjective(callback);
+  };
+
+  DataStoreGithubIssue.prototype.insertAction = function (entity, callback) {
+    this.actions.push(entity);
+    this.saveAction(callback);
+  };
+
+  DataStoreGithubIssue.prototype.removeObjective = function (id, callback) {
+    this.list = this.list.filter(function (v) {
+      return !v.id.eq(id);
+    });
+    this.saveObjective(callback);
+  };
+
+  DataStoreGithubIssue.prototype.removeAction = function (id, callback) {
+    this.actions = this.actions.filter(function (v) {
+      return !v.id.eq(id);
+    });
+    this.saveAction(callback);
+  };
+
+  DataStoreGithubIssue.prototype.saveObjective = function (callback) {
+    var raw = JSON.stringify(this.list.map(function (v) {
+      return v.toObject();
+    }));
+    console.log(raw);
+    this.issueRepository.updateBody(this.objectiveIssueNumber, raw, callback);
+  };
+
+  DataStoreGithubIssue.prototype.saveAction = function (callback) {
+    var raw = JSON.stringify(this.actions.map(function (v) {
+      return v.toObject();
+    }));
+    console.log(raw);
+    this.issueRepository.updateBody(this.actionIssueNumber, raw, callback);
+  };
+
+  return DataStoreGithubIssue;
+}();
+
+exports.DataStoreGithubIssue = DataStoreGithubIssue;
+},{"../../domain/Objective":"domain/Objective.ts","./DataStoreUtils":"infra/datastore/DataStoreUtils.ts"}],"infra/datastore/DataStoreLocalStorage.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -528,7 +695,62 @@ function () {
 }();
 
 exports.DataStoreLocalStorage = DataStoreLocalStorage;
-},{"../../domain/Objective":"domain/Objective.ts","./DataStoreUtils":"infra/datastore/DataStoreUtils.ts"}],"infra/view/MermaidConvertor.ts":[function(require,module,exports) {
+},{"../../domain/Objective":"domain/Objective.ts","./DataStoreUtils":"infra/datastore/DataStoreUtils.ts"}],"infra/infra.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.IssueRepositoryImpl = exports.IssueNumber = void 0;
+
+var IssueNumber =
+/** @class */
+function () {
+  function IssueNumber(value) {
+    this.value = value;
+  }
+
+  return IssueNumber;
+}();
+
+exports.IssueNumber = IssueNumber;
+
+var IssueRepositoryImpl =
+/** @class */
+function () {
+  function IssueRepositoryImpl(githubToken, owner, repo, isOnlyOpenIssue, GitHub) {
+    this.isOnlyOpenIssue = isOnlyOpenIssue;
+    this.gh = new GitHub({
+      token: githubToken
+    });
+    this.issues = this.gh.getIssues(owner, repo);
+  }
+
+  IssueRepositoryImpl.prototype.getIssue = function (issueNumber, callback) {
+    this.issues.getIssue(issueNumber.value, callback);
+  };
+
+  IssueRepositoryImpl.prototype.updateTitle = function (issueNumber, title, callback) {
+    this.issues.editIssue(issueNumber.value, {
+      title: title
+    }, callback);
+  };
+
+  IssueRepositoryImpl.prototype.updateBody = function (issueNumber, body, callback) {
+    this.issues.editIssue(issueNumber.value, {
+      body: body
+    }, callback);
+  };
+
+  IssueRepositoryImpl.prototype.createIssue = function (issue, callback) {
+    this.issues.createIssue(issue, callback);
+  };
+
+  return IssueRepositoryImpl;
+}();
+
+exports.IssueRepositoryImpl = IssueRepositoryImpl;
+},{}],"infra/view/MermaidConvertor.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1408,13 +1630,19 @@ function () {
 }();
 
 exports.ObjectiveRepositoryImpl = ObjectiveRepositoryImpl;
-},{"../domain/Objective":"domain/Objective.ts","./InMemoryDataStore":"infra/InMemoryDataStore.ts"}],"main.ts":[function(require,module,exports) {
+},{"../domain/Objective":"domain/Objective.ts","./InMemoryDataStore":"infra/InMemoryDataStore.ts"}],"htmlmain.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.main = void 0;
+exports.htmlMain = void 0;
+
+var DataStoreGithub_1 = require("./infra/datastore/DataStoreGithub");
+
+var DataStoreLocalStorage_1 = require("./infra/datastore/DataStoreLocalStorage");
+
+var infra_1 = require("./infra/infra");
 
 var PjfuVue_1 = require("./infra/view/PjfuVue");
 
@@ -1424,7 +1652,7 @@ var ObjectiveRepositoryImpl_1 = require("./infra/ObjectiveRepositoryImpl");
 
 var AnyId_1 = require("./infra/view/AnyId");
 
-function main(dataStore) {
+function htmlMain(dataStore) {
   dataStore.findAll(function (err, objectives, actions) {
     var objectiveRepository = new ObjectiveRepositoryImpl_1.ObjectiveRepositoryImpl(dataStore, objectives);
     var actionRepository = new ActionRepositoryImpl_1.ActionRepositoryImpl(dataStore, actions);
@@ -1448,22 +1676,14 @@ function main(dataStore) {
   });
 }
 
-exports.main = main;
-},{"./infra/view/PjfuVue":"infra/view/PjfuVue.ts","./infra/ActionRepositoryImpl":"infra/ActionRepositoryImpl.ts","./infra/ObjectiveRepositoryImpl":"infra/ObjectiveRepositoryImpl.ts","./infra/view/AnyId":"infra/view/AnyId.ts"}],"htmlmain.ts":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var DataStoreLocalStorage_1 = require("./infra/datastore/DataStoreLocalStorage");
-
-var main_1 = require("./main"); // グローバルから使える
-
+exports.htmlMain = htmlMain; // グローバルから使えるようにする
 
 window['DataStoreLocalStorage'] = DataStoreLocalStorage_1.DataStoreLocalStorage;
-window['main'] = main_1.main;
-},{"./infra/datastore/DataStoreLocalStorage":"infra/datastore/DataStoreLocalStorage.ts","./main":"main.ts"}],"../../../../../../usr/local/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+window['DataStoreGithubIssue'] = DataStoreGithub_1.DataStoreGithubIssue;
+window['IssueRepositoryImpl'] = infra_1.IssueRepositoryImpl;
+window['IssueNumber'] = infra_1.IssueNumber;
+window['htmlMain'] = htmlMain;
+},{"./infra/datastore/DataStoreGithub":"infra/datastore/DataStoreGithub.ts","./infra/datastore/DataStoreLocalStorage":"infra/datastore/DataStoreLocalStorage.ts","./infra/infra":"infra/infra.ts","./infra/view/PjfuVue":"infra/view/PjfuVue.ts","./infra/ActionRepositoryImpl":"infra/ActionRepositoryImpl.ts","./infra/ObjectiveRepositoryImpl":"infra/ObjectiveRepositoryImpl.ts","./infra/view/AnyId":"infra/view/AnyId.ts"}],"../../../../../../usr/local/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
