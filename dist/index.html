@@ -35,24 +35,30 @@
   </head>
   
   <h1>プロジェクト譜</h1>
-  <div id="profu" class="mermaid"></div>
   <div id="app">
-    {{ message }}
+  <div class="graph">
+    <div id="profu" class="mermaid"></div>
     ツリー表示: <input id="rootIdSpan" value="O0" /><button id="applyRootIdButton">反映</button><button id="applyTreeCenteredFromSelected">選択中を反映</button><br>
-    <h3>編集</h3>
-    編集対象: <input v-model="editTargetId" /><button id="applyTargetIdButton">反映</button><br>
-    ID: <span id="selectedIdSpan">{{editForm.id}}</span><br>
-    タイトル: <input v-model="editForm.title" /><br>
-    上位: <input v-model="editForm.parents.value"/><br>
-    <textarea v-model="editForm.detail.value"></textarea><br>
-    <button v-on:click="onClickUpdateButton">更新</button><button v-on:click="onClickInsertObjectiveButton">新規目標作成</button><button v-on:click="onClickInsertActionButton">新規施策作成</button><br>
-    リンク<br>
-    <ul>
-      <li v-for="link in editForm.links"><a v-bind:href="link.path" target="_blank">{{link.name}}</a></li>
-    </ul>
-    アクション<br>
-    <button v-on:click="onClickSubButton">子要素追加</button>
-    <button v-on:click="onClickRemoveButton">削除</button>
+  </div>
+  
+    
+
+    <div class="edit">
+      <h3>編集</h3>
+      編集対象: <input v-model="editTargetId" /><button id="applyTargetIdButton">反映</button><br>
+      ID: <span id="selectedIdSpan">{{editForm.id}}</span><br>
+      タイトル: <input v-model="editForm.title" /><br>
+      上位: <input v-model="editForm.parents.value"/><br>
+      <textarea v-model="editForm.detail.value"></textarea><br>
+      <button v-on:click="onClickUpdateButton">更新</button><button v-on:click="onClickInsertObjectiveButton">新規目標作成</button><button v-on:click="onClickInsertActionButton">新規施策作成</button><br>
+      リンク<br>
+      <ul>
+        <li v-for="link in editForm.links"><a v-bind:href="link.path" target="_blank">{{link.name}}</a></li>
+      </ul>
+      アクション<br>
+      <button v-on:click="onClickSubButton">子要素追加</button>
+      <button v-on:click="onClickRemoveButton">削除</button>
+    </div>
     <h3>タスク</h3>
     <ul>
       <li v-for="task in tasks.filter(v => !v.isDone)"><a v-bind:href="task.link">{{task.text}}</a></li>

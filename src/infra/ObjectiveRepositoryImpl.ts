@@ -1,6 +1,6 @@
 import { Objective } from "../domain/Objective";
 import { InMemoryDataStore } from './InMemoryDataStore';
-import { ObjectiveDataStore } from "./ObjectiveDataStore";
+import { ObjectiveDataStore } from "./datastore/ObjectiveDataStore";
 
 export class ObjectiveRepositoryImpl implements Objective.Repository {
   private inMemoryObjectiveDataStore: InMemoryDataStore<Objective.Id, Objective.Entity>;

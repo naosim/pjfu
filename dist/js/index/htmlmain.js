@@ -1043,7 +1043,7 @@ function () {
       return "- [" + v.name + "](" + v.path + ")";
     }), '# ノート: \n' + metaData.note.value, '# マイルストーン: \n' + metaData.tasks.map(function (v) {
       return v.limitDate.raw + " " + v.title + " " + (v.status.isNotEmpty() ? '[' + v.status.raw + ']' : '');
-    })].join('\n');
+    }).join('\n')].join('\n');
   };
 
   MetaDataConverter.textToObj = function (text) {
@@ -1475,6 +1475,7 @@ function () {
     this.data.tasks = tasks.sort(function (a, b) {
       return a.limitTimestamp - b.limitTimestamp;
     });
+    console.log(tasks);
   };
 
   return PjfuVue;

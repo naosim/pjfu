@@ -279,6 +279,7 @@ export class PjfuVue {
     this.objectiveRepository.findAll().forEach(v => v.metaData.tasks.forEach(t => tasks.push(new TaskView(AnyId.create(v.id), v.title, t, now))))
     this.actionRepository.findAll().forEach(v => v.metaData.tasks.forEach(t => tasks.push(new TaskView(AnyId.create(v.id), v.title, t, now))))
     this.data.tasks = tasks.sort((a, b) => a.limitTimestamp - b.limitTimestamp);
+    console.log(tasks);
   }
 }
 

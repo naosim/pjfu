@@ -1,4 +1,4 @@
-import { Action } from "../domain/Action";
+import { Action } from "../../domain/Action";
 
 export interface ActionDataStore {
   // findAllAction(callback: (err: Error, entities: Action.Entity[]) => void): void;

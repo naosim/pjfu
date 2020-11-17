@@ -1,7 +1,7 @@
 import { Action } from "../domain/Action";
 import { Objective } from "../domain/Objective";
 import { InMemoryDataStore } from './InMemoryDataStore';
-import { ActionDataStore } from "./ActionDataStore";
+import { ActionDataStore } from "./datastore/ActionDataStore";
 
 export class ActionRepositoryImpl implements Action.Repository {
   private inMemoryActionDataStore: InMemoryDataStore<Action.Id, Action.Entity>;

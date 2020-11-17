@@ -62,7 +62,7 @@ export class MetaDataConverter {
       '# 担当: ' + metaData.members.join(', '),
       '# リンク: \n' + metaData.links.map(v => `- [${v.name}](${v.path})`),
       '# ノート: \n' + metaData.note.value,
-      '# マイルストーン: \n' + metaData.tasks.map(v => `${v.limitDate.raw} ${v.title} ${v.status.isNotEmpty() ? '[' + v.status.raw + ']' : ''}`)
+      '# マイルストーン: \n' + metaData.tasks.map(v => `${v.limitDate.raw} ${v.title} ${v.status.isNotEmpty() ? '[' + v.status.raw + ']' : ''}`).join('\n')
     ].join('\n');
   }
 
