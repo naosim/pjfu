@@ -905,67 +905,6 @@ function () {
 }();
 
 exports.IssueRepositoryImpl = IssueRepositoryImpl;
-},{}],"infra/view/MermaidConvertor.ts":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.MermaidConvertor = void 0;
-
-var MermaidConvertor =
-/** @class */
-function () {
-  function MermaidConvertor() {}
-
-  MermaidConvertor.toMermaidScript = function (entities, actions, treeCenterId, selectedId) {
-    var isSelected = function isSelected(id) {
-      return id == treeCenterId.getValue() || selectedId && id == selectedId.getValue();
-    };
-
-    var map = {};
-    entities.forEach(function (v) {
-      return map[v.id.value] = v;
-    });
-    var rectText = entities.map(function (v) {
-      return v.id.value + "[\"" + v.title + "\"]" + (isSelected(v.id.value) ? ':::objective_select' : '');
-    }).join('\n');
-    var linkText = entities.map(function (v) {
-      return "click " + v.id.value + " \"./index.html#" + v.id.value + "\"";
-    }).join('\n');
-    var arrowText = entities.filter(function (v) {
-      return v.parent && map[v.parent.value];
-    }).map(function (v) {
-      return v.id.value + " --> " + v.parent.value;
-    }).join('\n');
-    var roundText = actions.map(function (v) {
-      return v.id.value + "(\"" + v.title + "<br>" + v.metaData.members.join(', ') + "\"):::action" + (isSelected(v.id.value) ? '_select' : '');
-    }).join('\n');
-    var actionLinkText = actions.map(function (v) {
-      return "click " + v.id.value + " \"./index.html#" + v.id.value + "\"";
-    }).join('\n');
-    var actionArrowText = actions.map(function (v) {
-      return v.parents.map(function (p) {
-        return v.id.value + " --> " + p.value;
-      }).join('\n');
-    }).join('\n');
-    var noteText = actions.filter(function (v) {
-      return v.metaData.note.isNotEmpty();
-    }).map(function (v) {
-      return v.id.value + "_note[\"" + v.metaData.note.value.split('\n').join('<br>') + "\"]:::note";
-    }).join('\n');
-    var noteArrowText = actions.filter(function (v) {
-      return v.metaData.note.isNotEmpty();
-    }).map(function (v) {
-      return v.id.value + "_note --- " + v.id.value;
-    }).join('\n');
-    return ("\n%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '10px', 'lineColor': '#888'}}}%%\ngraph LR\nclassDef objective_select stroke-width:4px;\nclassDef action fill:#ECFFEC, stroke: #93DB70;\nclassDef action_select fill:#ECFFEC, stroke: #93DB70, stroke-width:4px;\nclassDef note fill:#FFFFEC, stroke: #DBDB93;\n" + rectText + "\n" + linkText + "\n" + arrowText + "\n" + roundText + "\n" + actionLinkText + "\n" + actionArrowText + "\n" + noteText + "\n" + noteArrowText + "\n  ").trim();
-  };
-
-  return MermaidConvertor;
-}();
-
-exports.MermaidConvertor = MermaidConvertor;
 },{}],"infra/view/MetaDataConverter.ts":[function(require,module,exports) {
 "use strict";
 
@@ -1138,7 +1077,7 @@ exports.AnyId = AnyId;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.TaskView = exports.PjfuVue = exports.ParentsForm = exports.MermaidTreeView = void 0;
+exports.TaskView = exports.PjfuVue = exports.ParentsForm = void 0;
 
 var domain_1 = require("../../domain/domain");
 
@@ -1146,73 +1085,9 @@ var Action_1 = require("../../domain/Action");
 
 var Objective_1 = require("../../domain/Objective");
 
-var MermaidConvertor_1 = require("./MermaidConvertor");
-
 var MetaDataConverter_1 = require("./MetaDataConverter");
 
 var AnyId_1 = require("./AnyId");
-
-var MermaidTreeView =
-/** @class */
-function () {
-  function MermaidTreeView(objectiveRepository, actionRepository, mermaid) {
-    this.objectiveRepository = objectiveRepository;
-    this.actionRepository = actionRepository;
-    this.mermaid = mermaid;
-  }
-
-  MermaidTreeView.prototype.update = function (id) {
-    var _this = this;
-
-    var idInHtml = document.querySelector('#rootIdSpan').value;
-    var anyId = new AnyId_1.AnyId(idInHtml);
-    var selectedId = id || [document.querySelector('#selectedIdSpan')].filter(function (v) {
-      return v;
-    }).map(function (v) {
-      return new AnyId_1.AnyId(v.innerHTML);
-    })[0];
-    var objectiveMap = {};
-    var actionMap = {};
-    var objectives = [];
-    var parents = null;
-    anyId.forEach(function (id) {
-      parents = [id];
-    }, function (id) {
-      var current = _this.actionRepository.findById(new Action_1.Action.Id(idInHtml));
-
-      parents = current.parents;
-      parents.forEach(function (p) {
-        _this.actionRepository.findChildren(p).forEach(function (v) {
-          actionMap[v.id.value] = v;
-        });
-      });
-    });
-    parents.forEach(function (p) {
-      var underObjectives = _this.objectiveRepository.findUnder(p);
-
-      underObjectives.forEach(function (v) {
-        objectiveMap[v.id.value] = v;
-
-        _this.actionRepository.findChildren(v.id).forEach(function (v) {
-          actionMap[v.id.value] = v;
-        });
-      });
-
-      _this.objectiveRepository.findParentsTree(p).forEach(function (v) {
-        return objectiveMap[v.id.value] = v;
-      });
-    });
-    var element = document.querySelector("#profu");
-    var text = MermaidConvertor_1.MermaidConvertor.toMermaidScript(Object.values(objectiveMap), Object.values(actionMap), anyId, selectedId);
-    this.mermaid.mermaidAPI.render('graphDiv', text, function (svg) {
-      return element.innerHTML = svg;
-    });
-  };
-
-  return MermaidTreeView;
-}();
-
-exports.MermaidTreeView = MermaidTreeView;
 
 var ParentsForm =
 /** @class */
@@ -1502,7 +1377,143 @@ function () {
 }();
 
 exports.TaskView = TaskView;
-},{"../../domain/domain":"domain/domain.ts","../../domain/Action":"domain/Action.ts","../../domain/Objective":"domain/Objective.ts","./MermaidConvertor":"infra/view/MermaidConvertor.ts","./MetaDataConverter":"infra/view/MetaDataConverter.ts","./AnyId":"infra/view/AnyId.ts"}],"infra/InMemoryDataStore.ts":[function(require,module,exports) {
+},{"../../domain/domain":"domain/domain.ts","../../domain/Action":"domain/Action.ts","../../domain/Objective":"domain/Objective.ts","./MetaDataConverter":"infra/view/MetaDataConverter.ts","./AnyId":"infra/view/AnyId.ts"}],"infra/view/MermaidConvertor.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.MermaidConvertor = void 0;
+
+var MermaidConvertor =
+/** @class */
+function () {
+  function MermaidConvertor() {}
+
+  MermaidConvertor.toMermaidScript = function (entities, actions, treeCenterId, selectedId) {
+    var isSelected = function isSelected(id) {
+      return id == treeCenterId.getValue() || selectedId && id == selectedId.getValue();
+    };
+
+    var map = {};
+    entities.forEach(function (v) {
+      return map[v.id.value] = v;
+    });
+    var rectText = entities.map(function (v) {
+      return v.id.value + "[\"" + v.title + "\"]" + (isSelected(v.id.value) ? ':::objective_select' : '');
+    }).join('\n');
+    var linkText = entities.map(function (v) {
+      return "click " + v.id.value + " \"./index.html#" + v.id.value + "\"";
+    }).join('\n');
+    var arrowText = entities.filter(function (v) {
+      return v.parent && map[v.parent.value];
+    }).map(function (v) {
+      return v.id.value + " --> " + v.parent.value;
+    }).join('\n');
+    var roundText = actions.map(function (v) {
+      return v.id.value + "(\"" + v.title + "<br>" + v.metaData.members.join(', ') + "\"):::action" + (isSelected(v.id.value) ? '_select' : '');
+    }).join('\n');
+    var actionLinkText = actions.map(function (v) {
+      return "click " + v.id.value + " \"./index.html#" + v.id.value + "\"";
+    }).join('\n');
+    var actionArrowText = actions.map(function (v) {
+      return v.parents.map(function (p) {
+        return v.id.value + " --> " + p.value;
+      }).join('\n');
+    }).join('\n');
+    var noteText = actions.filter(function (v) {
+      return v.metaData.note.isNotEmpty();
+    }).map(function (v) {
+      return v.id.value + "_note[\"" + v.metaData.note.value.split('\n').join('<br>') + "\"]:::note";
+    }).join('\n');
+    var noteArrowText = actions.filter(function (v) {
+      return v.metaData.note.isNotEmpty();
+    }).map(function (v) {
+      return v.id.value + "_note --- " + v.id.value;
+    }).join('\n');
+    return ("\n%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '10px', 'lineColor': '#888'}}}%%\ngraph LR\nclassDef objective_select stroke-width:4px;\nclassDef action fill:#ECFFEC, stroke: #93DB70;\nclassDef action_select fill:#ECFFEC, stroke: #93DB70, stroke-width:4px;\nclassDef note fill:#FFFFEC, stroke: #DBDB93;\n" + rectText + "\n" + linkText + "\n" + arrowText + "\n" + roundText + "\n" + actionLinkText + "\n" + actionArrowText + "\n" + noteText + "\n" + noteArrowText + "\n  ").trim();
+  };
+
+  return MermaidConvertor;
+}();
+
+exports.MermaidConvertor = MermaidConvertor;
+},{}],"infra/view/MermaidTreeView.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.MermaidTreeView = void 0;
+
+var Action_1 = require("../../domain/Action");
+
+var MermaidConvertor_1 = require("./MermaidConvertor");
+
+var AnyId_1 = require("./AnyId");
+
+var MermaidTreeView =
+/** @class */
+function () {
+  function MermaidTreeView(objectiveRepository, actionRepository, mermaid) {
+    this.objectiveRepository = objectiveRepository;
+    this.actionRepository = actionRepository;
+    this.mermaid = mermaid;
+  }
+
+  MermaidTreeView.prototype.update = function (id) {
+    var _this = this;
+
+    var idInHtml = document.querySelector('#rootIdSpan').value;
+    var anyId = new AnyId_1.AnyId(idInHtml);
+    var selectedId = id || [document.querySelector('#selectedIdSpan')].filter(function (v) {
+      return v;
+    }).map(function (v) {
+      return new AnyId_1.AnyId(v.innerHTML);
+    })[0];
+    var objectiveMap = {};
+    var actionMap = {};
+    var objectives = [];
+    var parents = null;
+    anyId.forEach(function (id) {
+      parents = [id];
+    }, function (id) {
+      var current = _this.actionRepository.findById(new Action_1.Action.Id(idInHtml));
+
+      parents = current.parents;
+      parents.forEach(function (p) {
+        _this.actionRepository.findChildren(p).forEach(function (v) {
+          actionMap[v.id.value] = v;
+        });
+      });
+    });
+    parents.forEach(function (p) {
+      var underObjectives = _this.objectiveRepository.findUnder(p);
+
+      underObjectives.forEach(function (v) {
+        objectiveMap[v.id.value] = v;
+
+        _this.actionRepository.findChildren(v.id).forEach(function (v) {
+          actionMap[v.id.value] = v;
+        });
+      });
+
+      _this.objectiveRepository.findParentsTree(p).forEach(function (v) {
+        return objectiveMap[v.id.value] = v;
+      });
+    });
+    var element = document.querySelector("#profu");
+    var text = MermaidConvertor_1.MermaidConvertor.toMermaidScript(Object.values(objectiveMap), Object.values(actionMap), anyId, selectedId);
+    this.mermaid.mermaidAPI.render('graphDiv', text, function (svg) {
+      return element.innerHTML = svg;
+    });
+  };
+
+  return MermaidTreeView;
+}();
+
+exports.MermaidTreeView = MermaidTreeView;
+},{"../../domain/Action":"domain/Action.ts","./MermaidConvertor":"infra/view/MermaidConvertor.ts","./AnyId":"infra/view/AnyId.ts"}],"infra/InMemoryDataStore.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1896,6 +1907,8 @@ var infra_1 = require("./infra/infra");
 
 var PjfuVue_1 = require("./infra/view/PjfuVue");
 
+var MermaidTreeView_1 = require("./infra/view/MermaidTreeView");
+
 var ActionRepositoryImpl_1 = require("./infra/ActionRepositoryImpl");
 
 var ObjectiveRepositoryImpl_1 = require("./infra/ObjectiveRepositoryImpl");
@@ -1906,7 +1919,7 @@ function htmlMain(dataStore) {
   dataStore.findAll(function (err, objectives, actions) {
     var objectiveRepository = new ObjectiveRepositoryImpl_1.ObjectiveRepositoryImpl(dataStore, objectives);
     var actionRepository = new ActionRepositoryImpl_1.ActionRepositoryImpl(dataStore, actions);
-    var mermaidTreeView = new PjfuVue_1.MermaidTreeView(objectiveRepository, actionRepository, window['mermaid']);
+    var mermaidTreeView = new MermaidTreeView_1.MermaidTreeView(objectiveRepository, actionRepository, window['mermaid']);
     var pjfuVue = new PjfuVue_1.PjfuVue(objectiveRepository, actionRepository, mermaidTreeView, window['Vue']); // 編集フォームはURLのハッシュに従う
 
     var updateFormByHash = function updateFormByHash() {
@@ -1937,7 +1950,7 @@ window['DataStoreGithubIssue'] = DataStoreGithub_1.DataStoreGithubIssue;
 window['IssueRepositoryImpl'] = infra_1.IssueRepositoryImpl;
 window['IssueNumber'] = infra_1.IssueNumber;
 window['htmlMain'] = htmlMain;
-},{"./infra/datastore/DataStoreGithub":"infra/datastore/DataStoreGithub.ts","./infra/datastore/DataStoreLocalStorage":"infra/datastore/DataStoreLocalStorage.ts","./infra/infra":"infra/infra.ts","./infra/view/PjfuVue":"infra/view/PjfuVue.ts","./infra/ActionRepositoryImpl":"infra/ActionRepositoryImpl.ts","./infra/ObjectiveRepositoryImpl":"infra/ObjectiveRepositoryImpl.ts","./infra/view/AnyId":"infra/view/AnyId.ts"}],"../../../../../../usr/local/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./infra/datastore/DataStoreGithub":"infra/datastore/DataStoreGithub.ts","./infra/datastore/DataStoreLocalStorage":"infra/datastore/DataStoreLocalStorage.ts","./infra/infra":"infra/infra.ts","./infra/view/PjfuVue":"infra/view/PjfuVue.ts","./infra/view/MermaidTreeView":"infra/view/MermaidTreeView.ts","./infra/ActionRepositoryImpl":"infra/ActionRepositoryImpl.ts","./infra/ObjectiveRepositoryImpl":"infra/ObjectiveRepositoryImpl.ts","./infra/view/AnyId":"infra/view/AnyId.ts"}],"../../../../../../usr/local/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;

@@ -2,7 +2,8 @@
 import { DataStoreGithubIssue } from "./infra/datastore/DataStoreGithub";
 import { DataStoreLocalStorage } from "./infra/datastore/DataStoreLocalStorage";
 import { IssueNumber, IssueRepositoryImpl } from "./infra/infra";
-import { MermaidTreeView, PjfuVue } from './infra/view/PjfuVue';
+import { PjfuVue } from './infra/view/PjfuVue';
+import { MermaidTreeView } from "./infra/view/MermaidTreeView";
 import { DataStore } from "./infra/datastore/DataStore";
 import { ActionRepositoryImpl } from "./infra/ActionRepositoryImpl";
 import { ObjectiveRepositoryImpl } from "./infra/ObjectiveRepositoryImpl";
