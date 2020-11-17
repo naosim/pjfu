@@ -156,8 +156,63 @@ function () {
     this.raw = raw;
   }
 
+  TaskLimitDate.prototype.getDate = function (now) {
+    return TaskLimitDate.textToDate(this.raw, now);
+  };
+  /**
+   * 過去2週間から未来2週間以内(だいたい)
+   * @param now
+   */
+
+
+  TaskLimitDate.prototype.isIn2Weeks = function (now) {
+    var d = this.getDate(now).getTime();
+    var day = 24 * 60 * 60 * 1000;
+    return now.getTime() - 15 * day < d && d < now.getTime() + 15 * day;
+  };
+
   TaskLimitDate.prototype.toObject = function () {
     return this.raw;
+  };
+
+  TaskLimitDate.textToDate = function (raw, now) {
+    if (raw.length == 0) {
+      return new Date('2999/12/31');
+    }
+
+    raw = raw.split('(')[0];
+    var segs = raw.split('/');
+
+    if (segs.length == 3) {
+      // yyyy/mm/dd
+      return new Date(raw);
+    }
+
+    if (segs.length == 2) {
+      // mm/dd
+      var year = now.getFullYear();
+      return TaskLimitDate.near(now, [new Date(year - 1 + "/" + raw), new Date(year + "/" + raw), new Date(year + 1 + "/" + raw)]);
+    }
+  };
+
+  TaskLimitDate.near = function (now, dates) {
+    var diffs = dates.map(function (v) {
+      return Math.abs(v.getTime() - now.getTime());
+    });
+
+    if (diffs[0] < diffs[1] && diffs[0] < diffs[2]) {
+      return dates[0];
+    }
+
+    if (diffs[1] < diffs[0] && diffs[1] < diffs[2]) {
+      return dates[1];
+    }
+
+    if (diffs[2] < diffs[0] && diffs[2] < diffs[1]) {
+      return dates[2];
+    }
+
+    throw new Error('予期せぬエラー');
   };
 
   return TaskLimitDate;
@@ -177,7 +232,11 @@ function () {
   };
 
   TaskStatus.prototype.isDone = function () {
-    return false;
+    var _this = this;
+
+    return ['完了'].filter(function (v) {
+      return _this.raw == v;
+    }).length > 0;
   };
 
   TaskStatus.prototype.isNotEmpty = function () {
@@ -953,7 +1012,9 @@ function () {
       return v.trim();
     }) : [], obj['リンク'] ? obj['リンク'].map(function (v) {
       return new domain_1.Link(v.name, v.path);
-    }) : [], new domain_1.Note(obj['ノート'] || ''), obj['マイルストーン'] ? obj['マイルストーン'].split('\n').map(MetaDataConverter.parseTaskLine) : []);
+    }) : [], new domain_1.Note(obj['ノート'] || ''), obj['マイルストーン'] ? obj['マイルストーン'].split('\n').map(function (v) {
+      return MetaDataConverter.parseTaskLine(v);
+    }) : []);
   };
 
   MetaDataConverter.parseTaskLine = function (line) {
@@ -1063,6 +1124,10 @@ function () {
     return this.getValue().length == 0;
   };
 
+  AnyId.create = function (id) {
+    return new AnyId(id.value);
+  };
+
   return AnyId;
 }();
 
@@ -1073,7 +1138,7 @@ exports.AnyId = AnyId;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.PjfuVue = exports.ParentsForm = exports.MermaidTreeView = void 0;
+exports.TaskView = exports.PjfuVue = exports.ParentsForm = exports.MermaidTreeView = void 0;
 
 var domain_1 = require("../../domain/domain");
 
@@ -1193,7 +1258,8 @@ function () {
           name: '',
           path: ''
         }]
-      }
+      },
+      tasks: [TaskView.empty(new Date())]
     };
     this.init(Vue);
   }
@@ -1226,6 +1292,7 @@ function () {
           }
         }
       });
+      this.updateTaskList();
     } catch (e) {
       console.error(e);
     }
@@ -1388,15 +1455,52 @@ function () {
   };
 
   PjfuVue.prototype.onUpdate = function () {
-    this.mermaidTreeView.update(); // マイルストーンを書く
+    this.mermaidTreeView.update();
+    this.updateTaskList();
+  };
 
-    this.objectiveRepository.findAll();
+  PjfuVue.prototype.updateTaskList = function () {
+    var tasks = [];
+    var now = new Date();
+    this.objectiveRepository.findAll().forEach(function (v) {
+      return v.metaData.tasks.forEach(function (t) {
+        return tasks.push(new TaskView(AnyId_1.AnyId.create(v.id), v.title, t, now));
+      });
+    });
+    this.actionRepository.findAll().forEach(function (v) {
+      return v.metaData.tasks.forEach(function (t) {
+        return tasks.push(new TaskView(AnyId_1.AnyId.create(v.id), v.title, t, now));
+      });
+    });
+    this.data.tasks = tasks.sort(function (a, b) {
+      return a.limitTimestamp - b.limitTimestamp;
+    });
   };
 
   return PjfuVue;
 }();
 
 exports.PjfuVue = PjfuVue;
+
+var TaskView =
+/** @class */
+function () {
+  function TaskView(id, title, task, now) {
+    this.link = "#" + id.getValue();
+    this.text = task.limitDate.raw + " " + title + " " + task.title + (task.status.isNotEmpty() ? " [" + task.status.raw + "]" : '');
+    this.limitTimestamp = task.limitDate.getDate(now).getTime();
+    this.isDone = task.status.isDone();
+    this.isIn2Weeks = task.limitDate.isIn2Weeks(now);
+  }
+
+  TaskView.empty = function (now) {
+    return new TaskView(new AnyId_1.AnyId(''), '', new domain_1.Task(new domain_1.TaskLimitDate(''), '', new domain_1.TaskStatus('')), now);
+  };
+
+  return TaskView;
+}();
+
+exports.TaskView = TaskView;
 },{"../../domain/domain":"domain/domain.ts","../../domain/Action":"domain/Action.ts","../../domain/Objective":"domain/Objective.ts","./MermaidConvertor":"infra/view/MermaidConvertor.ts","./MetaDataConverter":"infra/view/MetaDataConverter.ts","./AnyId":"infra/view/AnyId.ts"}],"infra/InMemoryDataStore.ts":[function(require,module,exports) {
 "use strict";
 

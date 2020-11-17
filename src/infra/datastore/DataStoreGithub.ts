@@ -47,7 +47,6 @@ export class DataStoreGithubIssue implements DataStore {
         raw = JSON.stringify([Objective.Entity.root()].map(v => v.toObject()));
       }
       console.log(raw);
-
       this.list = JSON.parse(raw).map(v => DataStoreUtils.dataToObjectiveEntity(v));
       callback(null, this.list);
     })
@@ -64,7 +63,6 @@ export class DataStoreGithubIssue implements DataStore {
         raw = '[]';
       }
       console.log(raw);
-
       this.actions = JSON.parse(raw).map(v => DataStoreUtils.dataToActionEntity(v));
 
       callback(null, this.actions);

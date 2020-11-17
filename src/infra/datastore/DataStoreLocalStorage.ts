@@ -34,7 +34,6 @@ export class DataStoreLocalStorage implements DataStore {
       localStorage.setItem('objectiveTree', raw);
     }
     console.log(raw);
-
     this.list = JSON.parse(raw).map(v => DataStoreUtils.dataToObjectiveEntity(v));
     setTimeout(() => callback(null, this.list), 100);
   }
@@ -49,7 +48,6 @@ export class DataStoreLocalStorage implements DataStore {
       localStorage.setItem('actionTree', raw);
     }
     console.log(raw);
-
     this.actions = JSON.parse(raw).map(v => DataStoreUtils.dataToActionEntity(v));
 
     setTimeout(() => callback(null, this.actions), 100);

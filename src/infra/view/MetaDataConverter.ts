@@ -9,6 +9,7 @@ import {
 
 export class MetaDataForm {
   private value = '';
+  constructor() {}
   set(metaData: MetaData) {
     this.value = MetaDataConverter.toText(metaData);
   }
@@ -29,7 +30,7 @@ export class MetaDataConverter {
       obj['担当'] ? obj['担当'].split(',').map(v => v.trim()) : [],
       obj['リンク'] ? obj['リンク'].map(v => new Link(v.name, v.path)) : [],
       new Note(obj['ノート'] || ''),
-      obj['マイルストーン'] ? obj['マイルストーン'].split('\n').map(MetaDataConverter.parseTaskLine) : []
+      obj['マイルストーン'] ? obj['マイルストーン'].split('\n').map(v => MetaDataConverter.parseTaskLine(v)) : []
     );
   }
 

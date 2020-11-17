@@ -1,4 +1,5 @@
 import { Action } from "../../domain/Action";
+import { StringValueObject } from "../../domain/domain";
 import { Objective } from "../../domain/Objective";
 
 export class AnyId {
@@ -20,5 +21,9 @@ export class AnyId {
   }
   isEmpty(): boolean {
     return this.getValue().length == 0;
+  }
+
+  static create(id: StringValueObject): AnyId {
+    return new AnyId(id.value);
   }
 }

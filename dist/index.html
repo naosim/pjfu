@@ -53,8 +53,15 @@
     アクション<br>
     <button v-on:click="onClickSubButton">子要素追加</button>
     <button v-on:click="onClickRemoveButton">削除</button>
+    <h3>タスク</h3>
+    <ul>
+      <li v-for="task in tasks.filter(v => !v.isDone)"><a v-bind:href="task.link">{{task.text}}</a></li>
+    </ul>
 
-    <button v-on:click="onClickApplyRootIdButton()">test</button>
+    <h3>完了済みタスク</h3>
+    <ul>
+      <li v-for="task in tasks.filter(v => v.isDone && v.isIn2Weeks)"><a v-bind:href="task.link">{{task.text}}</a></li>
+    </ul>
   </div>
   <script src="./js/index/htmlmain.js?v=1"></script>
   <script src="./js/index/main.js"></script>

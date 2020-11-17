@@ -1,4 +1,4 @@
-import { MetaData } from '../../domain/domain';
+import { MetaData, Task, TaskLimitDate, TaskStatus } from '../../domain/domain';
 import { Action } from "../../domain/Action";
 import { Objective } from "../../domain/Objective";
 import { MermaidConvertor } from './MermaidConvertor';
@@ -79,6 +79,7 @@ export class PjfuVue {
       detail: MetaDataForm;
       links: { name: string; path: string; }[];
     };
+    tasks: TaskView[]
   } = {
       message: 'hoge',
       treeTargetId: '',
@@ -89,7 +90,8 @@ export class PjfuVue {
         parents: new ParentsForm(),
         detail: new MetaDataForm(),
         links: [{ name: '', path: '' }]
-      }
+      },
+      tasks: [TaskView.empty(new Date())]
     };
   constructor(
     private objectiveRepository: Objective.Repository,
@@ -114,6 +116,7 @@ export class PjfuVue {
         onClickRemoveButton: () => this.remove()
       }
     });
+    this.updateTaskList();
     } catch(e) {
       console.error(e);
     }
@@ -140,7 +143,7 @@ export class PjfuVue {
         this.data.editForm.id = action.id.value;
         this.data.editForm.title = action.title;
         this.data.editForm.parents.set(action.parents);
-        this.data.editForm.detail.set(action.metaData)
+        this.data.editForm.detail.set(action.metaData);
         this.data.editForm.links = action.metaData.links.map(v => ({name: v.name, path: v.path}))
       }
     )
@@ -267,8 +270,38 @@ export class PjfuVue {
 
   onUpdate() {
     this.mermaidTreeView.update();
+    this.updateTaskList();
+    
+  }
+  updateTaskList() {
+    const tasks:TaskView[] = []
+    const now = new Date();
+    this.objectiveRepository.findAll().forEach(v => v.metaData.tasks.forEach(t => tasks.push(new TaskView(AnyId.create(v.id), v.title, t, now))))
+    this.actionRepository.findAll().forEach(v => v.metaData.tasks.forEach(t => tasks.push(new TaskView(AnyId.create(v.id), v.title, t, now))))
+    this.data.tasks = tasks.sort((a, b) => a.limitTimestamp - b.limitTimestamp);
+  }
+}
 
-    // マイルストーンを書く
-    this.objectiveRepository.findAll()
+
+export class TaskView {
+  link: string;
+  text: string;
+  limitTimestamp: number;
+  isDone: boolean;
+  isIn2Weeks: boolean;// 過去2週間から未来2週間
+  constructor(
+    id: AnyId,
+    title: string,
+    task: Task,
+    now: Date
+  ) {
+    this.link = `#${id.getValue()}`
+    this.text = `${task.limitDate.raw} ${title} ${task.title}` + (task.status.isNotEmpty() ? ` [${task.status.raw}]` : '')
+    this.limitTimestamp = task.limitDate.getDate(now).getTime()
+    this.isDone = task.status.isDone();
+    this.isIn2Weeks = task.limitDate.isIn2Weeks(now);
+  }
+  static empty(now: Date): TaskView {
+    return new TaskView(new AnyId(''), '', new Task(new TaskLimitDate(''), '', new TaskStatus('')), now)
   }
 }

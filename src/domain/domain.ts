@@ -23,9 +23,55 @@ export class Note implements StringValueObject {
 }
 
 export class TaskLimitDate {
-  constructor(readonly raw: string) {}
+  constructor(readonly raw: string) {
+  }
+  getDate(now: Date) {
+    return TaskLimitDate.textToDate(this.raw, now);
+  }
+  /**
+   * 過去2週間から未来2週間以内(だいたい)
+   * @param now 
+   */
+  isIn2Weeks(now: Date): boolean {
+    const d = this.getDate(now).getTime();
+    const day = 24 * 60 * 60 * 1000;
+    return now.getTime() - 15 * day < d && d < now.getTime() + 15 * day;
+  }
   toObject(): any {
     return this.raw;
+  }
+  static textToDate(raw: string, now: Date): Date {
+    if(raw.length == 0) {
+      return new Date('2999/12/31');
+    }
+    raw = raw.split('(')[0]
+    var segs = raw.split('/')
+    if(segs.length == 3) {// yyyy/mm/dd
+      return new Date(raw);
+    } if(segs.length == 2) {// mm/dd
+      const year = now.getFullYear();
+      return TaskLimitDate.near(
+        now, 
+        [
+          new Date(`${year-1}/${raw}`),
+          new Date(`${year}/${raw}`),
+          new Date(`${year+1}/${raw}`)
+        ]
+      )
+    }
+  }
+  private static near(now: Date, dates: Date[]) {
+    const diffs = dates.map(v => Math.abs(v.getTime() - now.getTime()));
+    if(diffs[0] < diffs[1] && diffs[0] < diffs[2]) {
+      return dates[0];
+    }
+    if(diffs[1] < diffs[0] && diffs[1] < diffs[2]) {
+      return dates[1];
+    }
+    if(diffs[2] < diffs[0] && diffs[2] < diffs[1]) {
+      return dates[2];
+    }
+    throw new Error('予期せぬエラー');
   }
 }
 
@@ -35,7 +81,7 @@ export class TaskStatus {
     return this.raw;
   }
   isDone(): boolean {
-    return false;
+    return ['完了'].filter(v => this.raw == v).length > 0;
   }
   isNotEmpty(): boolean {
     return this.raw.trim().length > 0;
