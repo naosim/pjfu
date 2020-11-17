@@ -1,19 +1,15 @@
 import { Action } from "../../domain/Action";
 import { Objective } from "../../domain/Objective";
-import { IssueNumber, IssueRepositoryImpl } from "../infra";
 import { DataStore } from './DataStore';
 import { DataStoreUtils } from './DataStoreUtils';
+import { TextIO } from "./TextIO";
 
-export class DataStoreGithubIssue implements DataStore {
+export class DataStoreServer implements DataStore {
   private callCount = 0;
   private list: Objective.Entity[];
   private actions: Action.Entity[];
 
-  constructor(
-    private objectiveIssueNumber: IssueNumber,
-    private actionIssueNumber: IssueNumber,
-    private issueRepository: IssueRepositoryImpl
-  ) {
+  constructor(private textIO: TextIO) {
 
   }
 
@@ -37,37 +33,52 @@ export class DataStoreGithubIssue implements DataStore {
     if (this.callCount > 0) {
       throw '2回目の呼出です';
     }
-    this.issueRepository.getIssue(this.objectiveIssueNumber, (err: Error, issue) => {
+    this.textIO.loadObjectives((err:Error, raw:string) => {
       if(err) {
         callback(err, null);
         return;
       }
-      var raw = issue.body;
-      if (!raw || raw.trim().length == 0) {
+      if (!raw) {
         raw = JSON.stringify([Objective.Entity.root()].map(v => v.toObject()));
+        this.textIO.saveObjectives(raw, (err) => {})
       }
       console.log(raw);
       this.list = JSON.parse(raw).map(v => DataStoreUtils.dataToObjectiveEntity(v));
-      callback(null, this.list);
+      callback(null, this.list)
     })
-    
   }
 
   private findAllAction(callback: (err: Error, entities: Action.Entity[]) => void): void {
     if (this.callCount > 0) {
       throw '2回目の呼出です';
     }
-    this.issueRepository.getIssue(this.actionIssueNumber, (err: Error, issue) => {
-      var raw = issue.body;
-      if (!raw || raw.trim().length == 0) {
+    this.textIO.loadActions((err:Error, raw:string) => {
+      if(err) {
+        callback(err, null);
+        return;
+      }
+
+      if (!raw) {
         raw = '[]';
+        this.textIO.saveActions(raw, (err) => {})
       }
       console.log(raw);
       this.actions = JSON.parse(raw).map(v => DataStoreUtils.dataToActionEntity(v));
-
-      callback(null, this.actions);
+  
+      callback(null, this.actions)
     })
-    
+  }
+
+  private saveObjective(callback: (err:Error) => void) {
+    const raw = JSON.stringify(this.list.map(v => v.toObject()));
+    console.log(raw);
+    this.textIO.saveObjectives(raw, callback);
+  }
+
+  private saveAction(callback: (err:Error) => void) {
+    const raw = JSON.stringify(this.actions.map(v => v.toObject()));
+    console.log(raw);
+    this.textIO.saveActions(raw, callback);
   }
 
   updateObjective(entity: Objective.Entity, callback: (err) => void) {
@@ -110,17 +121,5 @@ export class DataStoreGithubIssue implements DataStore {
   removeAction(id: Action.Id, callback: (err: Error) => void) {
     this.actions = this.actions.filter(v => !v.id.eq(id));
     this.saveAction(callback);
-  }
-
-  private saveObjective(callback: (err:Error) => void) {
-    const raw = JSON.stringify(this.list.map(v => v.toObject()));
-    console.log(raw);
-    this.issueRepository.updateBody(this.objectiveIssueNumber, raw, callback)
-  }
-
-  private saveAction(callback: (err:Error) => void) {
-    const raw = JSON.stringify(this.actions.map(v => v.toObject()));
-    console.log(raw);
-    this.issueRepository.updateBody(this.actionIssueNumber, raw, callback)
   }
 }

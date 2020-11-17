@@ -1,17 +1,17 @@
 
-import { DataStoreGithubIssue } from "./infra/datastore/DataStoreGithub";
-import { DataStoreLocalStorage } from "./infra/datastore/DataStoreLocalStorage";
 import { IssueNumber, IssueRepositoryImpl } from "./infra/infra";
 import { PjfuVue } from './infra/view/PjfuVue';
 import { MermaidTreeView } from "./infra/view/MermaidTreeView";
-import { DataStore } from "./infra/datastore/DataStore";
 import { ActionRepositoryImpl } from "./infra/ActionRepositoryImpl";
 import { ObjectiveRepositoryImpl } from "./infra/ObjectiveRepositoryImpl";
 import { AnyId } from './infra/view/AnyId';
 import { Objective } from './domain/Objective';
 import { Action } from './domain/Action';
+import { GithubIssueIO, LocalStrageIO, TextIO } from "./infra/datastore/TextIO";
+import { DataStoreServer } from "./infra/datastore/DataStoreServer";
 
-export function htmlMain(dataStore: DataStore) {
+export function htmlMain(textIo: TextIO) {
+  const dataStore = new DataStoreServer(textIo);
   dataStore.findAll((err, objectives, actions) => {
     const objectiveRepository: Objective.Repository = new ObjectiveRepositoryImpl(dataStore, objectives);
     const actionRepository: Action.Repository = new ActionRepositoryImpl(dataStore, actions);
@@ -44,8 +44,8 @@ export function htmlMain(dataStore: DataStore) {
 }
 
 // グローバルから使えるようにする
-window['DataStoreLocalStorage'] = DataStoreLocalStorage
-window['DataStoreGithubIssue'] = DataStoreGithubIssue
+window['LocalStrageIO'] = LocalStrageIO
+window['GithubIssueIO'] = GithubIssueIO
 window['IssueRepositoryImpl'] = IssueRepositoryImpl
 window['IssueNumber'] = IssueNumber
 window['htmlMain'] = htmlMain

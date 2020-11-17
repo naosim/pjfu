@@ -117,7 +117,62 @@ parcelRequire = (function (modules, cache, entry, globalName) {
   }
 
   return newRequire;
-})({"domain/domain.ts":[function(require,module,exports) {
+})({"infra/infra.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.IssueRepositoryImpl = exports.IssueNumber = void 0;
+
+var IssueNumber =
+/** @class */
+function () {
+  function IssueNumber(value) {
+    this.value = value;
+  }
+
+  return IssueNumber;
+}();
+
+exports.IssueNumber = IssueNumber;
+
+var IssueRepositoryImpl =
+/** @class */
+function () {
+  function IssueRepositoryImpl(githubToken, owner, repo, isOnlyOpenIssue, GitHub) {
+    this.isOnlyOpenIssue = isOnlyOpenIssue;
+    this.gh = new GitHub({
+      token: githubToken
+    });
+    this.issues = this.gh.getIssues(owner, repo);
+  }
+
+  IssueRepositoryImpl.prototype.getIssue = function (issueNumber, callback) {
+    this.issues.getIssue(issueNumber.value, callback);
+  };
+
+  IssueRepositoryImpl.prototype.updateTitle = function (issueNumber, title, callback) {
+    this.issues.editIssue(issueNumber.value, {
+      title: title
+    }, callback);
+  };
+
+  IssueRepositoryImpl.prototype.updateBody = function (issueNumber, body, callback) {
+    this.issues.editIssue(issueNumber.value, {
+      body: body
+    }, callback);
+  };
+
+  IssueRepositoryImpl.prototype.createIssue = function (issue, callback) {
+    this.issues.createIssue(issue, callback);
+  };
+
+  return IssueRepositoryImpl;
+}();
+
+exports.IssueRepositoryImpl = IssueRepositoryImpl;
+},{}],"domain/domain.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -323,6 +378,70 @@ function () {
 }();
 
 exports.Link = Link;
+},{}],"domain/Action.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Action = void 0;
+var Action;
+
+(function (Action) {
+  var Entity =
+  /** @class */
+  function () {
+    function Entity(id, title, parents, metaData) {
+      this.id = id;
+      this.title = title;
+      this.parents = parents;
+      this.metaData = metaData;
+
+      if (!title || title.trim().length == 0) {
+        throw new Error('タイトルが空です');
+      }
+    }
+
+    Entity.prototype.toObject = function () {
+      return {
+        id: this.id.toObject(),
+        title: this.title,
+        parents: this.parents.map(function (v) {
+          return v.toObject();
+        }),
+        metaData: this.metaData.toObject()
+      };
+    };
+
+    return Entity;
+  }();
+
+  Action.Entity = Entity;
+
+  var Id =
+  /** @class */
+  function () {
+    function Id(value) {
+      this.value = value;
+    }
+
+    Id.create = function (num) {
+      return new Id('A' + num);
+    };
+
+    Id.prototype.toObject = function () {
+      return this.value;
+    };
+
+    Id.prototype.eq = function (other) {
+      return other && this.value === other.value;
+    };
+
+    return Id;
+  }();
+
+  Action.Id = Id;
+})(Action = exports.Action || (exports.Action = {}));
 },{}],"domain/Objective.ts":[function(require,module,exports) {
 "use strict";
 
@@ -399,513 +518,7 @@ var Objective;
 
   Objective.Id = Id;
 })(Objective = exports.Objective || (exports.Objective = {}));
-},{"./domain":"domain/domain.ts"}],"domain/Action.ts":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.Action = void 0;
-var Action;
-
-(function (Action) {
-  var Entity =
-  /** @class */
-  function () {
-    function Entity(id, title, parents, metaData) {
-      this.id = id;
-      this.title = title;
-      this.parents = parents;
-      this.metaData = metaData;
-
-      if (!title || title.trim().length == 0) {
-        throw new Error('タイトルが空です');
-      }
-    }
-
-    Entity.prototype.toObject = function () {
-      return {
-        id: this.id.toObject(),
-        title: this.title,
-        parents: this.parents.map(function (v) {
-          return v.toObject();
-        }),
-        metaData: this.metaData.toObject()
-      };
-    };
-
-    return Entity;
-  }();
-
-  Action.Entity = Entity;
-
-  var Id =
-  /** @class */
-  function () {
-    function Id(value) {
-      this.value = value;
-    }
-
-    Id.create = function (num) {
-      return new Id('A' + num);
-    };
-
-    Id.prototype.toObject = function () {
-      return this.value;
-    };
-
-    Id.prototype.eq = function (other) {
-      return other && this.value === other.value;
-    };
-
-    return Id;
-  }();
-
-  Action.Id = Id;
-})(Action = exports.Action || (exports.Action = {}));
-},{}],"infra/datastore/DataStoreUtils.ts":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.DataStoreUtils = void 0;
-
-var domain_1 = require("../../domain/domain");
-
-var Action_1 = require("../../domain/Action");
-
-var Objective_1 = require("../../domain/Objective");
-
-var DataStoreUtils =
-/** @class */
-function () {
-  function DataStoreUtils() {}
-
-  DataStoreUtils.dataToMetaData = function (mataDataObj) {
-    return new domain_1.MetaData(mataDataObj.description, mataDataObj.members || [], mataDataObj.links ? mataDataObj.links.map(function (v) {
-      return new domain_1.Link(v.name, v.path);
-    }) : [], new domain_1.Note(mataDataObj.note || ''), mataDataObj.tasks ? mataDataObj.tasks.map(function (v) {
-      return new domain_1.Task(new domain_1.TaskLimitDate(v.limitDate), v.title, new domain_1.TaskStatus(v.status || ''));
-    }) : []);
-  };
-
-  DataStoreUtils.dataToObjectiveEntity = function (v) {
-    return new Objective_1.Objective.Entity(new Objective_1.Objective.Id(v.id), v.title, v.parent ? new Objective_1.Objective.Id(v.parent) : null, DataStoreUtils.dataToMetaData(v.metaData));
-  };
-
-  DataStoreUtils.dataToActionEntity = function (v) {
-    return new Action_1.Action.Entity(new Objective_1.Objective.Id(v.id), v.title, v.parents.map(function (v) {
-      return new Action_1.Action.Id(v);
-    }), DataStoreUtils.dataToMetaData(v.metaData));
-  };
-
-  return DataStoreUtils;
-}();
-
-exports.DataStoreUtils = DataStoreUtils;
-},{"../../domain/domain":"domain/domain.ts","../../domain/Action":"domain/Action.ts","../../domain/Objective":"domain/Objective.ts"}],"infra/datastore/DataStoreGithub.ts":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.DataStoreGithubIssue = void 0;
-
-var Objective_1 = require("../../domain/Objective");
-
-var DataStoreUtils_1 = require("./DataStoreUtils");
-
-var DataStoreGithubIssue =
-/** @class */
-function () {
-  function DataStoreGithubIssue(objectiveIssueNumber, actionIssueNumber, issueRepository) {
-    this.objectiveIssueNumber = objectiveIssueNumber;
-    this.actionIssueNumber = actionIssueNumber;
-    this.issueRepository = issueRepository;
-    this.callCount = 0;
-  }
-
-  DataStoreGithubIssue.prototype.findAll = function (callback) {
-    var _this = this;
-
-    this.findAllObjective(function (err, objectives) {
-      if (err) {
-        callback(err, null, null);
-        return;
-      }
-
-      _this.findAllAction(function (err, actions) {
-        if (err) {
-          callback(err, null, null);
-          return;
-        }
-
-        setTimeout(function () {
-          return callback(null, objectives, actions);
-        }, 100);
-      });
-    });
-  };
-
-  DataStoreGithubIssue.prototype.findAllObjective = function (callback) {
-    var _this = this;
-
-    if (this.callCount > 0) {
-      throw '2回目の呼出です';
-    }
-
-    this.issueRepository.getIssue(this.objectiveIssueNumber, function (err, issue) {
-      if (err) {
-        callback(err, null);
-        return;
-      }
-
-      var raw = issue.body;
-
-      if (!raw || raw.trim().length == 0) {
-        raw = JSON.stringify([Objective_1.Objective.Entity.root()].map(function (v) {
-          return v.toObject();
-        }));
-      }
-
-      console.log(raw);
-      _this.list = JSON.parse(raw).map(function (v) {
-        return DataStoreUtils_1.DataStoreUtils.dataToObjectiveEntity(v);
-      });
-      callback(null, _this.list);
-    });
-  };
-
-  DataStoreGithubIssue.prototype.findAllAction = function (callback) {
-    var _this = this;
-
-    if (this.callCount > 0) {
-      throw '2回目の呼出です';
-    }
-
-    this.issueRepository.getIssue(this.actionIssueNumber, function (err, issue) {
-      var raw = issue.body;
-
-      if (!raw || raw.trim().length == 0) {
-        raw = '[]';
-      }
-
-      console.log(raw);
-      _this.actions = JSON.parse(raw).map(function (v) {
-        return DataStoreUtils_1.DataStoreUtils.dataToActionEntity(v);
-      });
-      callback(null, _this.actions);
-    });
-  };
-
-  DataStoreGithubIssue.prototype.updateObjective = function (entity, callback) {
-    for (var i = 0; i < this.list.length; i++) {
-      if (this.list[i].id.value == entity.id.value) {
-        this.list[i] = entity;
-        this.saveObjective(callback);
-        return;
-      }
-    }
-
-    setTimeout(function () {
-      return callback(new Error("entity not found: " + entity.id.value));
-    }, 100);
-  };
-
-  DataStoreGithubIssue.prototype.updateAction = function (entity, callback) {
-    for (var i = 0; i < this.actions.length; i++) {
-      if (this.actions[i].id.value == entity.id.value) {
-        this.actions[i] = entity;
-        this.saveAction(callback);
-        return;
-      }
-    }
-
-    setTimeout(function () {
-      return callback(new Error("entity not found: " + entity.id.value));
-    }, 100);
-  };
-
-  DataStoreGithubIssue.prototype.insertObjective = function (entity, callback) {
-    this.list.push(entity);
-    this.saveObjective(callback);
-  };
-
-  DataStoreGithubIssue.prototype.insertAction = function (entity, callback) {
-    this.actions.push(entity);
-    this.saveAction(callback);
-  };
-
-  DataStoreGithubIssue.prototype.removeObjective = function (id, callback) {
-    this.list = this.list.filter(function (v) {
-      return !v.id.eq(id);
-    });
-    this.saveObjective(callback);
-  };
-
-  DataStoreGithubIssue.prototype.removeAction = function (id, callback) {
-    this.actions = this.actions.filter(function (v) {
-      return !v.id.eq(id);
-    });
-    this.saveAction(callback);
-  };
-
-  DataStoreGithubIssue.prototype.saveObjective = function (callback) {
-    var raw = JSON.stringify(this.list.map(function (v) {
-      return v.toObject();
-    }));
-    console.log(raw);
-    this.issueRepository.updateBody(this.objectiveIssueNumber, raw, callback);
-  };
-
-  DataStoreGithubIssue.prototype.saveAction = function (callback) {
-    var raw = JSON.stringify(this.actions.map(function (v) {
-      return v.toObject();
-    }));
-    console.log(raw);
-    this.issueRepository.updateBody(this.actionIssueNumber, raw, callback);
-  };
-
-  return DataStoreGithubIssue;
-}();
-
-exports.DataStoreGithubIssue = DataStoreGithubIssue;
-},{"../../domain/Objective":"domain/Objective.ts","./DataStoreUtils":"infra/datastore/DataStoreUtils.ts"}],"infra/datastore/DataStoreLocalStorage.ts":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.DataStoreLocalStorage = void 0;
-
-var Objective_1 = require("../../domain/Objective");
-
-var DataStoreUtils_1 = require("./DataStoreUtils");
-
-var DataStoreLocalStorage =
-/** @class */
-function () {
-  function DataStoreLocalStorage() {
-    this.callCount = 0;
-  }
-
-  DataStoreLocalStorage.prototype.findAll = function (callback) {
-    var _this = this;
-
-    this.findAllObjective(function (err, objectives) {
-      if (err) {
-        callback(err, null, null);
-        return;
-      }
-
-      _this.findAllAction(function (err, actions) {
-        if (err) {
-          callback(err, null, null);
-          return;
-        }
-
-        setTimeout(function () {
-          return callback(null, objectives, actions);
-        }, 100);
-      });
-    });
-  };
-
-  DataStoreLocalStorage.prototype.findAllObjective = function (callback) {
-    var _this = this;
-
-    if (this.callCount > 0) {
-      throw '2回目の呼出です';
-    }
-
-    var raw = localStorage.getItem('objectiveTree');
-
-    if (!raw) {
-      raw = JSON.stringify([Objective_1.Objective.Entity.root()].map(function (v) {
-        return v.toObject();
-      }));
-      localStorage.setItem('objectiveTree', raw);
-    }
-
-    console.log(raw);
-    this.list = JSON.parse(raw).map(function (v) {
-      return DataStoreUtils_1.DataStoreUtils.dataToObjectiveEntity(v);
-    });
-    setTimeout(function () {
-      return callback(null, _this.list);
-    }, 100);
-  };
-
-  DataStoreLocalStorage.prototype.findAllAction = function (callback) {
-    var _this = this;
-
-    if (this.callCount > 0) {
-      throw '2回目の呼出です';
-    }
-
-    var raw = localStorage.getItem('actionTree');
-
-    if (!raw) {
-      raw = '[]';
-      localStorage.setItem('actionTree', raw);
-    }
-
-    console.log(raw);
-    this.actions = JSON.parse(raw).map(function (v) {
-      return DataStoreUtils_1.DataStoreUtils.dataToActionEntity(v);
-    });
-    setTimeout(function () {
-      return callback(null, _this.actions);
-    }, 100);
-  };
-
-  DataStoreLocalStorage.prototype.updateObjective = function (entity, callback) {
-    for (var i = 0; i < this.list.length; i++) {
-      if (this.list[i].id.value == entity.id.value) {
-        this.list[i] = entity;
-        this.saveObjective();
-        setTimeout(function () {
-          return callback(null);
-        }, 100);
-        return;
-      }
-    }
-
-    setTimeout(function () {
-      return callback(new Error("entity not found: " + entity.id.value));
-    }, 100);
-  };
-
-  DataStoreLocalStorage.prototype.updateAction = function (entity, callback) {
-    for (var i = 0; i < this.actions.length; i++) {
-      if (this.actions[i].id.value == entity.id.value) {
-        this.actions[i] = entity;
-        this.saveAction();
-        setTimeout(function () {
-          return callback(null);
-        }, 100);
-        return;
-      }
-    }
-
-    setTimeout(function () {
-      return callback(new Error("entity not found: " + entity.id.value));
-    }, 100);
-  };
-
-  DataStoreLocalStorage.prototype.insertObjective = function (entity, callback) {
-    this.list.push(entity);
-    this.saveObjective();
-    setTimeout(function () {
-      return callback(null);
-    }, 100);
-  };
-
-  DataStoreLocalStorage.prototype.insertAction = function (entity, callback) {
-    this.actions.push(entity);
-    this.saveAction();
-    setTimeout(function () {
-      return callback(null);
-    }, 100);
-  };
-
-  DataStoreLocalStorage.prototype.removeObjective = function (id, callback) {
-    this.list = this.list.filter(function (v) {
-      return !v.id.eq(id);
-    });
-    this.saveObjective();
-    setTimeout(function () {
-      return callback(null);
-    }, 100);
-  };
-
-  DataStoreLocalStorage.prototype.removeAction = function (id, callback) {
-    this.actions = this.actions.filter(function (v) {
-      return !v.id.eq(id);
-    });
-    this.saveAction();
-    setTimeout(function () {
-      return callback(null);
-    }, 100);
-  };
-
-  DataStoreLocalStorage.prototype.saveObjective = function () {
-    var raw = JSON.stringify(this.list.map(function (v) {
-      return v.toObject();
-    }));
-    console.log(raw);
-    localStorage.setItem('objectiveTree', raw);
-  };
-
-  DataStoreLocalStorage.prototype.saveAction = function () {
-    var raw = JSON.stringify(this.actions.map(function (v) {
-      return v.toObject();
-    }));
-    console.log(raw);
-    localStorage.setItem('actionTree', raw);
-  };
-
-  return DataStoreLocalStorage;
-}();
-
-exports.DataStoreLocalStorage = DataStoreLocalStorage;
-},{"../../domain/Objective":"domain/Objective.ts","./DataStoreUtils":"infra/datastore/DataStoreUtils.ts"}],"infra/infra.ts":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.IssueRepositoryImpl = exports.IssueNumber = void 0;
-
-var IssueNumber =
-/** @class */
-function () {
-  function IssueNumber(value) {
-    this.value = value;
-  }
-
-  return IssueNumber;
-}();
-
-exports.IssueNumber = IssueNumber;
-
-var IssueRepositoryImpl =
-/** @class */
-function () {
-  function IssueRepositoryImpl(githubToken, owner, repo, isOnlyOpenIssue, GitHub) {
-    this.isOnlyOpenIssue = isOnlyOpenIssue;
-    this.gh = new GitHub({
-      token: githubToken
-    });
-    this.issues = this.gh.getIssues(owner, repo);
-  }
-
-  IssueRepositoryImpl.prototype.getIssue = function (issueNumber, callback) {
-    this.issues.getIssue(issueNumber.value, callback);
-  };
-
-  IssueRepositoryImpl.prototype.updateTitle = function (issueNumber, title, callback) {
-    this.issues.editIssue(issueNumber.value, {
-      title: title
-    }, callback);
-  };
-
-  IssueRepositoryImpl.prototype.updateBody = function (issueNumber, body, callback) {
-    this.issues.editIssue(issueNumber.value, {
-      body: body
-    }, callback);
-  };
-
-  IssueRepositoryImpl.prototype.createIssue = function (issue, callback) {
-    this.issues.createIssue(issue, callback);
-  };
-
-  return IssueRepositoryImpl;
-}();
-
-exports.IssueRepositoryImpl = IssueRepositoryImpl;
-},{}],"infra/view/MetaDataConverter.ts":[function(require,module,exports) {
+},{"./domain":"domain/domain.ts"}],"infra/view/MetaDataConverter.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1891,17 +1504,313 @@ function () {
 }();
 
 exports.ObjectiveRepositoryImpl = ObjectiveRepositoryImpl;
-},{"../domain/Objective":"domain/Objective.ts","./InMemoryDataStore":"infra/InMemoryDataStore.ts"}],"htmlmain.ts":[function(require,module,exports) {
+},{"../domain/Objective":"domain/Objective.ts","./InMemoryDataStore":"infra/InMemoryDataStore.ts"}],"infra/datastore/TextIO.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.GithubIssueIO = exports.LocalStrageIO = void 0;
+
+var LocalStrageIO =
+/** @class */
+function () {
+  function LocalStrageIO() {}
+
+  LocalStrageIO.prototype.saveObjectives = function (raw, callback) {
+    localStorage.setItem('objectiveTree', raw);
+    setTimeout(function () {
+      return callback(null);
+    }, 100);
+  };
+
+  LocalStrageIO.prototype.saveActions = function (raw, callback) {
+    localStorage.setItem('actionTree', raw);
+    setTimeout(function () {
+      return callback(null);
+    }, 100);
+  };
+
+  LocalStrageIO.prototype.loadObjectives = function (callback) {
+    var raw = localStorage.getItem('objectiveTree');
+    setTimeout(function () {
+      return callback(null, raw);
+    }, 100);
+  };
+
+  LocalStrageIO.prototype.loadActions = function (callback) {
+    var raw = localStorage.getItem('actionTree');
+    setTimeout(function () {
+      return callback(null, raw);
+    }, 100);
+  };
+
+  return LocalStrageIO;
+}();
+
+exports.LocalStrageIO = LocalStrageIO;
+
+var GithubIssueIO =
+/** @class */
+function () {
+  function GithubIssueIO(objectiveIssueNumber, actionIssueNumber, issueRepository) {
+    this.objectiveIssueNumber = objectiveIssueNumber;
+    this.actionIssueNumber = actionIssueNumber;
+    this.issueRepository = issueRepository;
+  }
+
+  GithubIssueIO.prototype.saveObjectives = function (raw, callback) {
+    this.issueRepository.updateBody(this.objectiveIssueNumber, raw, callback);
+  };
+
+  GithubIssueIO.prototype.saveActions = function (raw, callback) {
+    this.issueRepository.updateBody(this.actionIssueNumber, raw, callback);
+  };
+
+  GithubIssueIO.prototype.loadObjectives = function (callback) {
+    this.issueRepository.getIssue(this.objectiveIssueNumber, function (err, issue) {
+      if (err) {
+        callback(err, null);
+        return;
+      }
+
+      callback(null, issue.body);
+    });
+  };
+
+  GithubIssueIO.prototype.loadActions = function (callback) {
+    this.issueRepository.getIssue(this.actionIssueNumber, function (err, issue) {
+      if (err) {
+        callback(err, null);
+        return;
+      }
+
+      callback(null, issue.body);
+    });
+  };
+
+  return GithubIssueIO;
+}();
+
+exports.GithubIssueIO = GithubIssueIO;
+},{}],"infra/datastore/DataStoreUtils.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.DataStoreUtils = void 0;
+
+var domain_1 = require("../../domain/domain");
+
+var Action_1 = require("../../domain/Action");
+
+var Objective_1 = require("../../domain/Objective");
+
+var DataStoreUtils =
+/** @class */
+function () {
+  function DataStoreUtils() {}
+
+  DataStoreUtils.dataToMetaData = function (mataDataObj) {
+    return new domain_1.MetaData(mataDataObj.description, mataDataObj.members || [], mataDataObj.links ? mataDataObj.links.map(function (v) {
+      return new domain_1.Link(v.name, v.path);
+    }) : [], new domain_1.Note(mataDataObj.note || ''), mataDataObj.tasks ? mataDataObj.tasks.map(function (v) {
+      return new domain_1.Task(new domain_1.TaskLimitDate(v.limitDate), v.title, new domain_1.TaskStatus(v.status || ''));
+    }) : []);
+  };
+
+  DataStoreUtils.dataToObjectiveEntity = function (v) {
+    return new Objective_1.Objective.Entity(new Objective_1.Objective.Id(v.id), v.title, v.parent ? new Objective_1.Objective.Id(v.parent) : null, DataStoreUtils.dataToMetaData(v.metaData));
+  };
+
+  DataStoreUtils.dataToActionEntity = function (v) {
+    return new Action_1.Action.Entity(new Objective_1.Objective.Id(v.id), v.title, v.parents.map(function (v) {
+      return new Action_1.Action.Id(v);
+    }), DataStoreUtils.dataToMetaData(v.metaData));
+  };
+
+  return DataStoreUtils;
+}();
+
+exports.DataStoreUtils = DataStoreUtils;
+},{"../../domain/domain":"domain/domain.ts","../../domain/Action":"domain/Action.ts","../../domain/Objective":"domain/Objective.ts"}],"infra/datastore/DataStoreServer.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.DataStoreServer = void 0;
+
+var Objective_1 = require("../../domain/Objective");
+
+var DataStoreUtils_1 = require("./DataStoreUtils");
+
+var DataStoreServer =
+/** @class */
+function () {
+  function DataStoreServer(textIO) {
+    this.textIO = textIO;
+    this.callCount = 0;
+  }
+
+  DataStoreServer.prototype.findAll = function (callback) {
+    var _this = this;
+
+    this.findAllObjective(function (err, objectives) {
+      if (err) {
+        callback(err, null, null);
+        return;
+      }
+
+      _this.findAllAction(function (err, actions) {
+        if (err) {
+          callback(err, null, null);
+          return;
+        }
+
+        setTimeout(function () {
+          return callback(null, objectives, actions);
+        }, 100);
+      });
+    });
+  };
+
+  DataStoreServer.prototype.findAllObjective = function (callback) {
+    var _this = this;
+
+    if (this.callCount > 0) {
+      throw '2回目の呼出です';
+    }
+
+    this.textIO.loadObjectives(function (err, raw) {
+      if (err) {
+        callback(err, null);
+        return;
+      }
+
+      if (!raw) {
+        raw = JSON.stringify([Objective_1.Objective.Entity.root()].map(function (v) {
+          return v.toObject();
+        }));
+
+        _this.textIO.saveObjectives(raw, function (err) {});
+      }
+
+      console.log(raw);
+      _this.list = JSON.parse(raw).map(function (v) {
+        return DataStoreUtils_1.DataStoreUtils.dataToObjectiveEntity(v);
+      });
+      callback(null, _this.list);
+    });
+  };
+
+  DataStoreServer.prototype.findAllAction = function (callback) {
+    var _this = this;
+
+    if (this.callCount > 0) {
+      throw '2回目の呼出です';
+    }
+
+    this.textIO.loadActions(function (err, raw) {
+      if (err) {
+        callback(err, null);
+        return;
+      }
+
+      if (!raw) {
+        raw = '[]';
+
+        _this.textIO.saveActions(raw, function (err) {});
+      }
+
+      console.log(raw);
+      _this.actions = JSON.parse(raw).map(function (v) {
+        return DataStoreUtils_1.DataStoreUtils.dataToActionEntity(v);
+      });
+      callback(null, _this.actions);
+    });
+  };
+
+  DataStoreServer.prototype.saveObjective = function (callback) {
+    var raw = JSON.stringify(this.list.map(function (v) {
+      return v.toObject();
+    }));
+    console.log(raw);
+    this.textIO.saveObjectives(raw, callback);
+  };
+
+  DataStoreServer.prototype.saveAction = function (callback) {
+    var raw = JSON.stringify(this.actions.map(function (v) {
+      return v.toObject();
+    }));
+    console.log(raw);
+    this.textIO.saveActions(raw, callback);
+  };
+
+  DataStoreServer.prototype.updateObjective = function (entity, callback) {
+    for (var i = 0; i < this.list.length; i++) {
+      if (this.list[i].id.value == entity.id.value) {
+        this.list[i] = entity;
+        this.saveObjective(callback);
+        return;
+      }
+    }
+
+    setTimeout(function () {
+      return callback(new Error("entity not found: " + entity.id.value));
+    }, 100);
+  };
+
+  DataStoreServer.prototype.updateAction = function (entity, callback) {
+    for (var i = 0; i < this.actions.length; i++) {
+      if (this.actions[i].id.value == entity.id.value) {
+        this.actions[i] = entity;
+        this.saveAction(callback);
+        return;
+      }
+    }
+
+    setTimeout(function () {
+      return callback(new Error("entity not found: " + entity.id.value));
+    }, 100);
+  };
+
+  DataStoreServer.prototype.insertObjective = function (entity, callback) {
+    this.list.push(entity);
+    this.saveObjective(callback);
+  };
+
+  DataStoreServer.prototype.insertAction = function (entity, callback) {
+    this.actions.push(entity);
+    this.saveAction(callback);
+  };
+
+  DataStoreServer.prototype.removeObjective = function (id, callback) {
+    this.list = this.list.filter(function (v) {
+      return !v.id.eq(id);
+    });
+    this.saveObjective(callback);
+  };
+
+  DataStoreServer.prototype.removeAction = function (id, callback) {
+    this.actions = this.actions.filter(function (v) {
+      return !v.id.eq(id);
+    });
+    this.saveAction(callback);
+  };
+
+  return DataStoreServer;
+}();
+
+exports.DataStoreServer = DataStoreServer;
+},{"../../domain/Objective":"domain/Objective.ts","./DataStoreUtils":"infra/datastore/DataStoreUtils.ts"}],"htmlmain.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.htmlMain = void 0;
-
-var DataStoreGithub_1 = require("./infra/datastore/DataStoreGithub");
-
-var DataStoreLocalStorage_1 = require("./infra/datastore/DataStoreLocalStorage");
 
 var infra_1 = require("./infra/infra");
 
@@ -1915,7 +1824,12 @@ var ObjectiveRepositoryImpl_1 = require("./infra/ObjectiveRepositoryImpl");
 
 var AnyId_1 = require("./infra/view/AnyId");
 
-function htmlMain(dataStore) {
+var TextIO_1 = require("./infra/datastore/TextIO");
+
+var DataStoreServer_1 = require("./infra/datastore/DataStoreServer");
+
+function htmlMain(textIo) {
+  var dataStore = new DataStoreServer_1.DataStoreServer(textIo);
   dataStore.findAll(function (err, objectives, actions) {
     var objectiveRepository = new ObjectiveRepositoryImpl_1.ObjectiveRepositoryImpl(dataStore, objectives);
     var actionRepository = new ActionRepositoryImpl_1.ActionRepositoryImpl(dataStore, actions);
@@ -1945,12 +1859,12 @@ function htmlMain(dataStore) {
 
 exports.htmlMain = htmlMain; // グローバルから使えるようにする
 
-window['DataStoreLocalStorage'] = DataStoreLocalStorage_1.DataStoreLocalStorage;
-window['DataStoreGithubIssue'] = DataStoreGithub_1.DataStoreGithubIssue;
+window['LocalStrageIO'] = TextIO_1.LocalStrageIO;
+window['GithubIssueIO'] = TextIO_1.GithubIssueIO;
 window['IssueRepositoryImpl'] = infra_1.IssueRepositoryImpl;
 window['IssueNumber'] = infra_1.IssueNumber;
 window['htmlMain'] = htmlMain;
-},{"./infra/datastore/DataStoreGithub":"infra/datastore/DataStoreGithub.ts","./infra/datastore/DataStoreLocalStorage":"infra/datastore/DataStoreLocalStorage.ts","./infra/infra":"infra/infra.ts","./infra/view/PjfuVue":"infra/view/PjfuVue.ts","./infra/view/MermaidTreeView":"infra/view/MermaidTreeView.ts","./infra/ActionRepositoryImpl":"infra/ActionRepositoryImpl.ts","./infra/ObjectiveRepositoryImpl":"infra/ObjectiveRepositoryImpl.ts","./infra/view/AnyId":"infra/view/AnyId.ts"}],"../../../../../../usr/local/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./infra/infra":"infra/infra.ts","./infra/view/PjfuVue":"infra/view/PjfuVue.ts","./infra/view/MermaidTreeView":"infra/view/MermaidTreeView.ts","./infra/ActionRepositoryImpl":"infra/ActionRepositoryImpl.ts","./infra/ObjectiveRepositoryImpl":"infra/ObjectiveRepositoryImpl.ts","./infra/view/AnyId":"infra/view/AnyId.ts","./infra/datastore/TextIO":"infra/datastore/TextIO.ts","./infra/datastore/DataStoreServer":"infra/datastore/DataStoreServer.ts"}],"../../../../../../usr/local/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
