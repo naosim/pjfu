@@ -1041,7 +1041,7 @@ function () {
   MetaDataConverter.toText = function (metaData) {
     return ['# 説明: \n' + metaData.description, '', '# 担当: ' + metaData.members.join(', '), '# リンク: \n' + metaData.links.map(function (v) {
       return "- [" + v.name + "](" + v.path + ")";
-    }), '# ノート: \n' + metaData.note.value, '# マイルストーン: \n' + metaData.tasks.map(function (v) {
+    }).join('\n'), '# ノート: \n' + metaData.note.value, '# マイルストーン: \n' + metaData.tasks.map(function (v) {
       return v.limitDate.raw + " " + v.title + " " + (v.status.isNotEmpty() ? '[' + v.status.raw + ']' : '');
     }).join('\n')].join('\n');
   };
