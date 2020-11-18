@@ -14,6 +14,7 @@ import { Objective } from "../../domain/Objective";
 export class DataStoreUtils {
 
   private static dataToMetaData(mataDataObj): MetaData {
+    
     return new MetaData(
       mataDataObj.description,
       mataDataObj.members || [],
@@ -24,6 +25,7 @@ export class DataStoreUtils {
   }
 
   static dataToObjectiveEntity(v): Objective.Entity {
+    // console.log(DataStoreUtils.dataToMetaData(v.metaData));
     return new Objective.Entity(
       new Objective.Id(v.id),
       v.title,
