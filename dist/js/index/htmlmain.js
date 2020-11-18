@@ -948,13 +948,17 @@ var MermaidConvertor =
 function () {
   function MermaidConvertor() {}
 
-  MermaidConvertor.toMermaidScript = function (entities, actions) {
+  MermaidConvertor.toMermaidScript = function (entities, actions, treeCenterId, selectedId) {
+    var isSelected = function isSelected(id) {
+      return id == treeCenterId.getValue() || selectedId && id == selectedId.getValue();
+    };
+
     var map = {};
     entities.forEach(function (v) {
       return map[v.id.value] = v;
     });
     var rectText = entities.map(function (v) {
-      return v.id.value + "[\"" + v.title + "\"]";
+      return v.id.value + "[\"" + v.title + "\"]" + (isSelected(v.id.value) ? ':::objective_select' : '');
     }).join('\n');
     var linkText = entities.map(function (v) {
       return "click " + v.id.value + " \"./index.html#" + v.id.value + "\"";
@@ -965,7 +969,7 @@ function () {
       return v.id.value + " --> " + v.parent.value;
     }).join('\n');
     var roundText = actions.map(function (v) {
-      return v.id.value + "(\"" + v.title + "\"):::action";
+      return v.id.value + "(\"" + v.title + "<br>" + v.metaData.members.join(', ') + "\"):::action" + (isSelected(v.id.value) ? '_select' : '');
     }).join('\n');
     var actionLinkText = actions.map(function (v) {
       return "click " + v.id.value + " \"./index.html#" + v.id.value + "\"";
@@ -975,7 +979,17 @@ function () {
         return v.id.value + " --> " + p.value;
       }).join('\n');
     }).join('\n');
-    return ("\ngraph LR\nclassDef action fill:#ECFFEC, stroke: #93DB70;\n" + rectText + "\n" + linkText + "\n" + arrowText + "\n" + roundText + "\n" + actionLinkText + "\n" + actionArrowText + "\n  ").trim();
+    var noteText = actions.filter(function (v) {
+      return v.metaData.note.isNotEmpty();
+    }).map(function (v) {
+      return v.id.value + "_note[\"" + v.metaData.note.value.split('\n').join('<br>') + "\"]:::note";
+    }).join('\n');
+    var noteArrowText = actions.filter(function (v) {
+      return v.metaData.note.isNotEmpty();
+    }).map(function (v) {
+      return v.id.value + "_note --- " + v.id.value;
+    }).join('\n');
+    return ("\n%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '10px', 'lineColor': '#888'}}}%%\ngraph LR\nclassDef objective_select stroke-width:4px;\nclassDef action fill:#ECFFEC, stroke: #93DB70;\nclassDef action_select fill:#ECFFEC, stroke: #93DB70, stroke-width:4px;\nclassDef note fill:#FFFFEC, stroke: #DBDB93;\n" + rectText + "\n" + linkText + "\n" + arrowText + "\n" + roundText + "\n" + actionLinkText + "\n" + actionArrowText + "\n" + noteText + "\n" + noteArrowText + "\n  ").trim();
   };
 
   return MermaidConvertor;
