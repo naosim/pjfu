@@ -1,5 +1,3 @@
-import { IssueNumber, IssueRepositoryImpl } from "../infra";
-
 export interface TextIO {
   saveObjectives(raw: string, callback: (err: Error) => void);
   saveActions(raw: string, callback: (err: Error) => void);
@@ -28,11 +26,19 @@ export class LocalStrageIO implements TextIO {
 }
 
 export class GithubIssueIO implements TextIO {
+  private issueRepository: IssueRepositoryImpl
   constructor(
     private objectiveIssueNumber: IssueNumber,
     private actionIssueNumber: IssueNumber,
-    private issueRepository: IssueRepositoryImpl
-    ) {}
+    githubToken: string, 
+    owner: string, 
+    repo: string,
+    GitHub: any
+    ) {
+      this.issueRepository = new IssueRepositoryImpl(
+        githubToken, owner, repo, GitHub
+      )
+    }
   saveObjectives(raw: string, callback: (err: Error) => void) {
     this.issueRepository.updateBody(this.objectiveIssueNumber, raw, callback)
   }
@@ -58,4 +64,42 @@ export class GithubIssueIO implements TextIO {
     });
   }
 
+}
+
+class GasIO {
+  // TODO
+}
+
+export class IssueNumber {
+  constructor(readonly value: number) {}
+}
+
+class IssueRepositoryImpl {
+  private gh: any;
+  private issues: any;
+  constructor(
+    githubToken: string, 
+    owner: string, 
+    repo: string,
+    GitHub: any
+  ) {
+    this.gh = new GitHub({token: githubToken});
+    this.issues = this.gh.getIssues(owner, repo)
+  }
+  
+  getIssue(issueNumber: IssueNumber, callback: (err, issue) => void): void {
+    this.issues.getIssue(issueNumber.value, callback);
+  }
+
+  updateTitle(issueNumber: IssueNumber, title: string, callback: (err, obj) => any) {
+    this.issues.editIssue(issueNumber.value, {title: title}, callback) 
+  }
+
+  updateBody(issueNumber: IssueNumber, body: string, callback: (err, obj) => any) {
+    this.issues.editIssue(issueNumber.value, {body: body}, callback) 
+  }
+
+  createIssue(issue: {title: string, body: string}, callback: (err, obj) => any) {
+    this.issues.createIssue(issue, callback);
+  }
 }

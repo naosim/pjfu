@@ -1,5 +1,4 @@
 
-import { IssueNumber, IssueRepositoryImpl } from "./infra/infra";
 import { PjfuVue } from './infra/view/PjfuVue';
 import { MermaidTreeView } from "./infra/view/MermaidTreeView";
 import { ActionRepositoryImpl } from "./infra/ActionRepositoryImpl";
@@ -7,7 +6,7 @@ import { ObjectiveRepositoryImpl } from "./infra/ObjectiveRepositoryImpl";
 import { AnyId } from './infra/view/AnyId';
 import { Objective } from './domain/Objective';
 import { Action } from './domain/Action';
-import { GithubIssueIO, LocalStrageIO, TextIO } from "./infra/datastore/TextIO";
+import { GithubIssueIO, IssueNumber, LocalStrageIO, TextIO } from "./infra/datastore/TextIO";
 import { DataStoreServer } from "./infra/datastore/DataStoreServer";
 
 export function htmlMain(textIo: TextIO) {
@@ -46,6 +45,5 @@ export function htmlMain(textIo: TextIO) {
 // グローバルから使えるようにする
 window['LocalStrageIO'] = LocalStrageIO
 window['GithubIssueIO'] = GithubIssueIO
-window['IssueRepositoryImpl'] = IssueRepositoryImpl
 window['IssueNumber'] = IssueNumber
 window['htmlMain'] = htmlMain
