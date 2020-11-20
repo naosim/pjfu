@@ -2,14 +2,14 @@ import { Action } from "../../domain/Action";
 import { Objective } from "../../domain/Objective";
 import { DataStore } from './DataStore';
 import { DataStoreUtils } from './DataStoreUtils';
-import { TextIO } from "./TextIO";
+import { PjfuTextIO } from "./TextIO";
 
 export class DataStoreServer implements DataStore {
   private callCount = 0;
   private list: Objective.Entity[];
   private actions: Action.Entity[];
 
-  constructor(private textIO: TextIO) {
+  constructor(private textIO: PjfuTextIO) {
 
   }
 

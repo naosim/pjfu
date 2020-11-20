@@ -1455,142 +1455,41 @@ exports.ObjectiveRepositoryImpl = ObjectiveRepositoryImpl;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.IssueNumber = exports.GithubIssueIO = exports.LocalStrageIO = void 0;
+exports.PjfuTextIO = void 0;
 
-var LocalStrageIO =
+var PjfuTextIO =
 /** @class */
 function () {
-  function LocalStrageIO() {}
-
-  LocalStrageIO.prototype.saveObjectives = function (raw, callback) {
-    localStorage.setItem('objectiveTree', raw);
-    setTimeout(function () {
-      return callback(null);
-    }, 100);
-  };
-
-  LocalStrageIO.prototype.saveActions = function (raw, callback) {
-    localStorage.setItem('actionTree', raw);
-    setTimeout(function () {
-      return callback(null);
-    }, 100);
-  };
-
-  LocalStrageIO.prototype.loadObjectives = function (callback) {
-    var raw = localStorage.getItem('objectiveTree');
-    setTimeout(function () {
-      return callback(null, raw);
-    }, 100);
-  };
-
-  LocalStrageIO.prototype.loadActions = function (callback) {
-    var raw = localStorage.getItem('actionTree');
-    setTimeout(function () {
-      return callback(null, raw);
-    }, 100);
-  };
-
-  return LocalStrageIO;
-}();
-
-exports.LocalStrageIO = LocalStrageIO;
-
-var GithubIssueIO =
-/** @class */
-function () {
-  function GithubIssueIO(objectiveIssueNumber, actionIssueNumber, githubToken, owner, repo, GitHub) {
-    this.objectiveIssueNumber = objectiveIssueNumber;
-    this.actionIssueNumber = actionIssueNumber;
-    this.issueRepository = new IssueRepositoryImpl(githubToken, owner, repo, GitHub);
+  function PjfuTextIO(keyValueIo) {
+    this.keyValueIo = keyValueIo;
   }
 
-  GithubIssueIO.prototype.saveObjectives = function (raw, callback) {
-    this.issueRepository.updateBody(this.objectiveIssueNumber, raw, callback);
+  PjfuTextIO.prototype.saveObjectives = function (raw, callback) {
+    this.keyValueIo.save(PjfuTextIOType.objectives, raw, callback);
   };
 
-  GithubIssueIO.prototype.saveActions = function (raw, callback) {
-    this.issueRepository.updateBody(this.actionIssueNumber, raw, callback);
+  PjfuTextIO.prototype.saveActions = function (raw, callback) {
+    this.keyValueIo.save(PjfuTextIOType.actions, raw, callback);
   };
 
-  GithubIssueIO.prototype.loadObjectives = function (callback) {
-    this.issueRepository.getIssue(this.objectiveIssueNumber, function (err, issue) {
-      if (err) {
-        callback(err, null);
-        return;
-      }
-
-      callback(null, issue.body);
-    });
+  PjfuTextIO.prototype.loadObjectives = function (callback) {
+    this.keyValueIo.load(PjfuTextIOType.objectives, callback);
   };
 
-  GithubIssueIO.prototype.loadActions = function (callback) {
-    this.issueRepository.getIssue(this.actionIssueNumber, function (err, issue) {
-      if (err) {
-        callback(err, null);
-        return;
-      }
-
-      callback(null, issue.body);
-    });
+  PjfuTextIO.prototype.loadActions = function (callback) {
+    this.keyValueIo.load(PjfuTextIOType.actions, callback);
   };
 
-  return GithubIssueIO;
+  return PjfuTextIO;
 }();
 
-exports.GithubIssueIO = GithubIssueIO;
+exports.PjfuTextIO = PjfuTextIO;
+var PjfuTextIOType;
 
-var GasIO =
-/** @class */
-function () {
-  function GasIO() {}
-
-  return GasIO;
-}();
-
-var IssueNumber =
-/** @class */
-function () {
-  function IssueNumber(value) {
-    this.value = value;
-  }
-
-  return IssueNumber;
-}();
-
-exports.IssueNumber = IssueNumber;
-
-var IssueRepositoryImpl =
-/** @class */
-function () {
-  function IssueRepositoryImpl(githubToken, owner, repo, GitHub) {
-    this.gh = new GitHub({
-      token: githubToken
-    });
-    this.issues = this.gh.getIssues(owner, repo);
-  }
-
-  IssueRepositoryImpl.prototype.getIssue = function (issueNumber, callback) {
-    this.issues.getIssue(issueNumber.value, callback);
-  };
-
-  IssueRepositoryImpl.prototype.updateTitle = function (issueNumber, title, callback) {
-    this.issues.editIssue(issueNumber.value, {
-      title: title
-    }, callback);
-  };
-
-  IssueRepositoryImpl.prototype.updateBody = function (issueNumber, body, callback) {
-    this.issues.editIssue(issueNumber.value, {
-      body: body
-    }, callback);
-  };
-
-  IssueRepositoryImpl.prototype.createIssue = function (issue, callback) {
-    this.issues.createIssue(issue, callback);
-  };
-
-  return IssueRepositoryImpl;
-}();
+(function (PjfuTextIOType) {
+  PjfuTextIOType["objectives"] = "objectives";
+  PjfuTextIOType["actions"] = "actions";
+})(PjfuTextIOType || (PjfuTextIOType = {}));
 },{}],"infra/datastore/DataStoreUtils.ts":[function(require,module,exports) {
 "use strict";
 
@@ -1803,7 +1702,131 @@ function () {
 }();
 
 exports.DataStoreServer = DataStoreServer;
-},{"../../domain/Objective":"domain/Objective.ts","./DataStoreUtils":"infra/datastore/DataStoreUtils.ts"}],"htmlmain.ts":[function(require,module,exports) {
+},{"../../domain/Objective":"domain/Objective.ts","./DataStoreUtils":"infra/datastore/DataStoreUtils.ts"}],"infra/datastore/keyvalue/LocalStrageKeyValueIO.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.LocalStrageKeyValueIO = void 0;
+
+var LocalStrageKeyValueIO =
+/** @class */
+function () {
+  function LocalStrageKeyValueIO(keyMap) {
+    this.keyMap = keyMap;
+  }
+
+  LocalStrageKeyValueIO.prototype.save = function (key, value, callback) {
+    localStorage.setItem(this.keyMap ? this.keyMap[key] : key, value);
+    setTimeout(function () {
+      return callback(null);
+    }, 100);
+  };
+
+  LocalStrageKeyValueIO.prototype.load = function (key, callback) {
+    var value = localStorage.getItem(this.keyMap ? this.keyMap[key] : key);
+    setTimeout(function () {
+      return callback(null, value);
+    }, 100);
+  };
+
+  return LocalStrageKeyValueIO;
+}();
+
+exports.LocalStrageKeyValueIO = LocalStrageKeyValueIO;
+},{}],"infra/datastore/keyvalue/IssueRepositoryImpl.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.IssueRepositoryImpl = exports.IssueNumber = void 0;
+
+var IssueNumber =
+/** @class */
+function () {
+  function IssueNumber(value) {
+    this.value = value;
+  }
+
+  return IssueNumber;
+}();
+
+exports.IssueNumber = IssueNumber;
+
+var IssueRepositoryImpl =
+/** @class */
+function () {
+  function IssueRepositoryImpl(githubToken, owner, repo, GitHub) {
+    this.gh = new GitHub({
+      token: githubToken
+    });
+    this.issues = this.gh.getIssues(owner, repo);
+  }
+
+  IssueRepositoryImpl.prototype.getIssue = function (issueNumber, callback) {
+    this.issues.getIssue(issueNumber.value, callback);
+  };
+
+  IssueRepositoryImpl.prototype.updateTitle = function (issueNumber, title, callback) {
+    this.issues.editIssue(issueNumber.value, {
+      title: title
+    }, callback);
+  };
+
+  IssueRepositoryImpl.prototype.updateBody = function (issueNumber, body, callback) {
+    this.issues.editIssue(issueNumber.value, {
+      body: body
+    }, callback);
+  };
+
+  IssueRepositoryImpl.prototype.createIssue = function (issue, callback) {
+    this.issues.createIssue(issue, callback);
+  };
+
+  return IssueRepositoryImpl;
+}();
+
+exports.IssueRepositoryImpl = IssueRepositoryImpl;
+},{}],"infra/datastore/keyvalue/GithubKeyValueIO.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.GithubKeyValueIO = void 0;
+
+var IssueRepositoryImpl_1 = require("./IssueRepositoryImpl");
+
+var GithubKeyValueIO =
+/** @class */
+function () {
+  function GithubKeyValueIO(keyMap, githubToken, owner, repo, GitHub) {
+    this.keyMap = keyMap;
+    this.issueRepository = new IssueRepositoryImpl_1.IssueRepositoryImpl(githubToken, owner, repo, GitHub);
+  }
+
+  GithubKeyValueIO.prototype.save = function (key, value, callback) {
+    this.issueRepository.updateBody(this.keyMap[key], value, callback);
+  };
+
+  GithubKeyValueIO.prototype.load = function (key, callback) {
+    this.issueRepository.getIssue(this.keyMap[key], function (err, issue) {
+      if (err) {
+        callback(err, null);
+        return;
+      }
+
+      callback(null, issue.body);
+    });
+  };
+
+  return GithubKeyValueIO;
+}();
+
+exports.GithubKeyValueIO = GithubKeyValueIO;
+},{"./IssueRepositoryImpl":"infra/datastore/keyvalue/IssueRepositoryImpl.ts"}],"htmlmain.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1825,8 +1848,14 @@ var TextIO_1 = require("./infra/datastore/TextIO");
 
 var DataStoreServer_1 = require("./infra/datastore/DataStoreServer");
 
-function htmlMain(textIo) {
-  var dataStore = new DataStoreServer_1.DataStoreServer(textIo);
+var LocalStrageKeyValueIO_1 = require("./infra/datastore/keyvalue/LocalStrageKeyValueIO");
+
+var GithubKeyValueIO_1 = require("./infra/datastore/keyvalue/GithubKeyValueIO");
+
+var IssueRepositoryImpl_1 = require("./infra/datastore/keyvalue/IssueRepositoryImpl");
+
+function htmlMain(keyValueIo) {
+  var dataStore = new DataStoreServer_1.DataStoreServer(new TextIO_1.PjfuTextIO(keyValueIo));
   dataStore.findAll(function (err, objectives, actions) {
     var objectiveRepository = new ObjectiveRepositoryImpl_1.ObjectiveRepositoryImpl(dataStore, objectives);
     var actionRepository = new ActionRepositoryImpl_1.ActionRepositoryImpl(dataStore, actions);
@@ -1856,11 +1885,11 @@ function htmlMain(textIo) {
 
 exports.htmlMain = htmlMain; // グローバルから使えるようにする
 
-window['LocalStrageIO'] = TextIO_1.LocalStrageIO;
-window['GithubIssueIO'] = TextIO_1.GithubIssueIO;
-window['IssueNumber'] = TextIO_1.IssueNumber;
+window['LocalStrageKeyValueIO'] = LocalStrageKeyValueIO_1.LocalStrageKeyValueIO;
+window['GithubKeyValueIO'] = GithubKeyValueIO_1.GithubKeyValueIO;
+window['IssueNumber'] = IssueRepositoryImpl_1.IssueNumber;
 window['htmlMain'] = htmlMain;
-},{"./infra/view/PjfuVue":"infra/view/PjfuVue.ts","./infra/view/MermaidTreeView":"infra/view/MermaidTreeView.ts","./infra/ActionRepositoryImpl":"infra/ActionRepositoryImpl.ts","./infra/ObjectiveRepositoryImpl":"infra/ObjectiveRepositoryImpl.ts","./infra/view/AnyId":"infra/view/AnyId.ts","./infra/datastore/TextIO":"infra/datastore/TextIO.ts","./infra/datastore/DataStoreServer":"infra/datastore/DataStoreServer.ts"}],"../../../../../../usr/local/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./infra/view/PjfuVue":"infra/view/PjfuVue.ts","./infra/view/MermaidTreeView":"infra/view/MermaidTreeView.ts","./infra/ActionRepositoryImpl":"infra/ActionRepositoryImpl.ts","./infra/ObjectiveRepositoryImpl":"infra/ObjectiveRepositoryImpl.ts","./infra/view/AnyId":"infra/view/AnyId.ts","./infra/datastore/TextIO":"infra/datastore/TextIO.ts","./infra/datastore/DataStoreServer":"infra/datastore/DataStoreServer.ts","./infra/datastore/keyvalue/LocalStrageKeyValueIO":"infra/datastore/keyvalue/LocalStrageKeyValueIO.ts","./infra/datastore/keyvalue/GithubKeyValueIO":"infra/datastore/keyvalue/GithubKeyValueIO.ts","./infra/datastore/keyvalue/IssueRepositoryImpl":"infra/datastore/keyvalue/IssueRepositoryImpl.ts"}],"../../../../../../usr/local/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
