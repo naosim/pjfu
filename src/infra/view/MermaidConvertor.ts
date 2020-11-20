@@ -13,11 +13,11 @@ export class MermaidConvertor {
     const map = {};
     entities.forEach(v => map[v.id.value] = v);
     const rectText = entities.map(v => `${v.id.value}["${v.title}"]${isSelected(v.id.value) ? ':::objective_select' : ''}`).join('\n');
-    const linkText = entities.map(v => `click ${v.id.value} "./index.html#${v.id.value}"`).join('\n');
+    const linkText = entities.map(v => `click ${v.id.value} mermaidCallback`).join('\n');
     const arrowText = entities.filter(v => v.parent && map[v.parent.value]).map(v => `${v.id.value} --> ${v.parent.value}`).join('\n');
 
     const roundText = actions.map(v => `${v.id.value}("${v.title}<br>${v.metaData.members.join(', ')}"):::action${isSelected(v.id.value) ? '_select' : ''}`).join('\n');
-    const actionLinkText = actions.map(v => `click ${v.id.value} "./index.html#${v.id.value}"`).join('\n');
+    const actionLinkText = actions.map(v => `click ${v.id.value} mermaidCallback`).join('\n');
     const actionArrowText = actions.map(v => v.parents.map(p => `${v.id.value} --> ${p.value}`).join('\n')).join('\n');
     const noteText = actions.filter(v => v.metaData.note.isNotEmpty()).map(v => `${v.id.value}_note["${v.metaData.note.value.split('\n').join('<br>')}"]:::note`).join('\n');
     const noteArrowText = actions.filter(v => v.metaData.note.isNotEmpty()).map(v => `${v.id.value}_note --- ${v.id.value}`).join('\n');

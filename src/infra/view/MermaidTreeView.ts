@@ -51,6 +51,13 @@ export class MermaidTreeView {
       anyId,
       selectedId
     );
-    this.mermaid.mermaidAPI.render('graphDiv', text, (svg) => element.innerHTML = svg);
+    // console.log(text);
+    this.mermaid.mermaidAPI.render(
+      'graphDiv', 
+      text, 
+      (svg, bind) => {
+        element.innerHTML = svg;
+        bind(element);
+      });
   }
 }

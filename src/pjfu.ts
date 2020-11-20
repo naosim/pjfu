@@ -36,6 +36,7 @@ export function pjfu(keyValueIo: KeyValueIO) {
     if (location.hash) {
       updateFormByHash();
     }
+    window['mermaidCallback'] = (id: string) => { pjfuVue.applyTargetId(new AnyId(id)); }
 
     mermaidTreeView.update();
     document.querySelector('#applyRootIdButton').addEventListener('click', () => mermaidTreeView.update());

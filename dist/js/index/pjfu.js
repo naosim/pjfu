@@ -961,7 +961,7 @@ function () {
       return v.id.value + "[\"" + v.title + "\"]" + (isSelected(v.id.value) ? ':::objective_select' : '');
     }).join('\n');
     var linkText = entities.map(function (v) {
-      return "click " + v.id.value + " \"./index.html#" + v.id.value + "\"";
+      return "click " + v.id.value + " mermaidCallback";
     }).join('\n');
     var arrowText = entities.filter(function (v) {
       return v.parent && map[v.parent.value];
@@ -972,7 +972,7 @@ function () {
       return v.id.value + "(\"" + v.title + "<br>" + v.metaData.members.join(', ') + "\"):::action" + (isSelected(v.id.value) ? '_select' : '');
     }).join('\n');
     var actionLinkText = actions.map(function (v) {
-      return "click " + v.id.value + " \"./index.html#" + v.id.value + "\"";
+      return "click " + v.id.value + " mermaidCallback";
     }).join('\n');
     var actionArrowText = actions.map(function (v) {
       return v.parents.map(function (p) {
@@ -1061,9 +1061,11 @@ function () {
       });
     });
     var element = document.querySelector("#profu");
-    var text = MermaidConvertor_1.MermaidConvertor.toMermaidScript(Object.values(objectiveMap), Object.values(actionMap), anyId, selectedId);
-    this.mermaid.mermaidAPI.render('graphDiv', text, function (svg) {
-      return element.innerHTML = svg;
+    var text = MermaidConvertor_1.MermaidConvertor.toMermaidScript(Object.values(objectiveMap), Object.values(actionMap), anyId, selectedId); // console.log(text);
+
+    this.mermaid.mermaidAPI.render('graphDiv', text, function (svg, bind) {
+      element.innerHTML = svg;
+      bind(element);
     });
   };
 
@@ -1871,6 +1873,10 @@ function pjfu(keyValueIo) {
     if (location.hash) {
       updateFormByHash();
     }
+
+    window['mermaidCallback'] = function (id) {
+      pjfuVue.applyTargetId(new AnyId_1.AnyId(id));
+    };
 
     mermaidTreeView.update();
     document.querySelector('#applyRootIdButton').addEventListener('click', function () {
