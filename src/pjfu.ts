@@ -13,7 +13,7 @@ import { GithubKeyValueIO } from './infra/datastore/keyvalue/GithubKeyValueIO';
 import { KeyValueIO } from './infra/datastore/keyvalue/KeyValueIO';
 import { IssueNumber } from './infra/datastore/keyvalue/IssueRepositoryImpl';
 
-export function htmlMain(keyValueIo: KeyValueIO) {
+export function pjfu(keyValueIo: KeyValueIO) {
   const dataStore = new DataStoreServer(new PjfuTextIO(keyValueIo));
   dataStore.findAll((err, objectives, actions) => {
     const objectiveRepository: Objective.Repository = new ObjectiveRepositoryImpl(dataStore, objectives);
@@ -50,4 +50,4 @@ export function htmlMain(keyValueIo: KeyValueIO) {
 window['LocalStrageKeyValueIO'] = LocalStrageKeyValueIO
 window['GithubKeyValueIO'] = GithubKeyValueIO
 window['IssueNumber'] = IssueNumber
-window['htmlMain'] = htmlMain
+window['pjfu'] = pjfu

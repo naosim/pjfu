@@ -4,4 +4,4 @@
 
 // 実行
 const keyValueIo = new LocalStrageKeyValueIO();
-htmlMain(keyValueIo)
+pjfu(keyValueIo)
