@@ -152,13 +152,12 @@ exports.Note = Note;
 var TaskLimitDate =
 /** @class */
 function () {
-  function TaskLimitDate(raw) {
+  function TaskLimitDate(raw, dateString) {
     this.raw = raw;
+    this.dateString = dateString;
+    this.date = new Date(dateString);
+    this.time = this.date.getTime();
   }
-
-  TaskLimitDate.prototype.getDate = function (now) {
-    return TaskLimitDate.textToDate(this.raw, now);
-  };
   /**
    * 過去2週間から未来2週間以内(だいたい)
    * @param now
@@ -166,13 +165,20 @@ function () {
 
 
   TaskLimitDate.prototype.isIn2Weeks = function (now) {
-    var d = this.getDate(now).getTime();
+    var d = this.time;
     var day = 24 * 60 * 60 * 1000;
     return now.getTime() - 15 * day < d && d < now.getTime() + 15 * day;
   };
 
   TaskLimitDate.prototype.toObject = function () {
-    return this.raw;
+    return {
+      raw: this.raw,
+      dateString: this.date.toLocaleDateString()
+    };
+  };
+
+  TaskLimitDate.create = function (raw, now) {
+    return new TaskLimitDate(raw, TaskLimitDate.textToDate(raw, now).toLocaleDateString());
   };
 
   TaskLimitDate.textToDate = function (raw, now) {
@@ -484,8 +490,8 @@ function () {
     this.value = MetaDataConverter.toText(metaData);
   };
 
-  MetaDataForm.prototype.get = function () {
-    return MetaDataConverter.toMetaData(this.value);
+  MetaDataForm.prototype.get = function (now) {
+    return MetaDataConverter.toMetaData(this.value, now);
   };
 
   return MetaDataForm;
@@ -498,7 +504,7 @@ var MetaDataConverter =
 function () {
   function MetaDataConverter() {}
 
-  MetaDataConverter.toMetaData = function (text) {
+  MetaDataConverter.toMetaData = function (text, now) {
     if (text.trim()[0] != '#') {
       return new domain_1.MetaData(text, [], [], domain_1.Note.empty(), []);
     }
@@ -510,13 +516,13 @@ function () {
     }) : [], obj['リンク'] ? obj['リンク'].map(function (v) {
       return new domain_1.Link(v.name, v.path);
     }) : [], new domain_1.Note(obj['ノート'] || ''), obj['マイルストーン'] ? obj['マイルストーン'].split('\n').map(function (v) {
-      return MetaDataConverter.parseTaskLine(v);
+      return MetaDataConverter.parseTaskLine(v, now);
     }) : []);
   };
 
-  MetaDataConverter.parseTaskLine = function (line) {
+  MetaDataConverter.parseTaskLine = function (line, now) {
     line = line.trim();
-    var limitDate = new domain_1.TaskLimitDate(line.slice(0, line.indexOf(' ')));
+    var limitDate = domain_1.TaskLimitDate.create(line.slice(0, line.indexOf(' ')), now);
     var title;
     var status;
 
@@ -841,11 +847,11 @@ function () {
     }
 
     anyId.forEach(function (id) {
-      var newEntity = new Objective_1.Objective.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get()[0], _this.data.editForm.detail.get());
+      var newEntity = new Objective_1.Objective.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get()[0], _this.data.editForm.detail.get(new Date()));
 
       _this.objectiveRepository.update(newEntity, callbackOnSaved);
     }, function (id) {
-      var newEntity = new Action_1.Action.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get(), _this.data.editForm.detail.get());
+      var newEntity = new Action_1.Action.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get(), _this.data.editForm.detail.get(new Date()));
 
       _this.actionRepository.update(newEntity, callbackOnSaved);
     });
@@ -866,7 +872,7 @@ function () {
     var _this = this;
 
     this.objectiveRepository.createId(function (err, id) {
-      var newEntity = new Objective_1.Objective.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get()[0], _this.data.editForm.detail.get());
+      var newEntity = new Objective_1.Objective.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get()[0], _this.data.editForm.detail.get(new Date()));
 
       _this.objectiveRepository.insert(newEntity, function (e) {
         console.log('callback');
@@ -890,7 +896,7 @@ function () {
     var _this = this;
 
     this.actionRepository.createId(function (err, id) {
-      var newEntity = new Action_1.Action.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get(), _this.data.editForm.detail.get());
+      var newEntity = new Action_1.Action.Entity(id, _this.data.editForm.title, _this.data.editForm.parents.get(), _this.data.editForm.detail.get(new Date()));
 
       _this.actionRepository.insert(newEntity, function (e) {
         console.log('callback');
@@ -993,13 +999,13 @@ function () {
   function TaskView(id, title, task, now) {
     this.id = id;
     this.text = task.limitDate.raw + " " + title + " " + task.title + (task.status.isNotEmpty() ? " [" + task.status.raw + "]" : '');
-    this.limitTimestamp = task.limitDate.getDate(now).getTime();
+    this.limitTimestamp = task.limitDate.time;
     this.isDone = task.status.isDone();
     this.isIn2Weeks = task.limitDate.isIn2Weeks(now);
   }
 
   TaskView.empty = function (now) {
-    return new TaskView(new AnyId_1.AnyId(''), '', new domain_1.Task(new domain_1.TaskLimitDate(''), '', new domain_1.TaskStatus('')), now);
+    return new TaskView(new AnyId_1.AnyId(''), '', new domain_1.Task(new domain_1.TaskLimitDate('', ''), '', new domain_1.TaskStatus('')), now);
   };
 
   return TaskView;
@@ -1670,23 +1676,23 @@ var DataStoreUtils =
 function () {
   function DataStoreUtils() {}
 
-  DataStoreUtils.dataToMetaData = function (mataDataObj) {
+  DataStoreUtils.dataToMetaData = function (mataDataObj, now) {
     return new domain_1.MetaData(mataDataObj.description, mataDataObj.members || [], mataDataObj.links ? mataDataObj.links.map(function (v) {
       return new domain_1.Link(v.name, v.path);
     }) : [], new domain_1.Note(mataDataObj.note || ''), mataDataObj.tasks ? mataDataObj.tasks.map(function (v) {
-      return new domain_1.Task(new domain_1.TaskLimitDate(v.limitDate), v.title, new domain_1.TaskStatus(v.status || ''));
+      return new domain_1.Task(v.limitDate.dateString ? new domain_1.TaskLimitDate(v.limitDate.raw, v.limitDate.dateString) : domain_1.TaskLimitDate.create(v.limitDate, now), v.title, new domain_1.TaskStatus(v.status || ''));
     }) : []);
   };
 
-  DataStoreUtils.dataToObjectiveEntity = function (v) {
+  DataStoreUtils.dataToObjectiveEntity = function (v, now) {
     // console.log(DataStoreUtils.dataToMetaData(v.metaData));
-    return new Objective_1.Objective.Entity(new Objective_1.Objective.Id(v.id), v.title, v.parent ? new Objective_1.Objective.Id(v.parent) : null, DataStoreUtils.dataToMetaData(v.metaData));
+    return new Objective_1.Objective.Entity(new Objective_1.Objective.Id(v.id), v.title, v.parent ? new Objective_1.Objective.Id(v.parent) : null, DataStoreUtils.dataToMetaData(v.metaData, now));
   };
 
-  DataStoreUtils.dataToActionEntity = function (v) {
+  DataStoreUtils.dataToActionEntity = function (v, now) {
     return new Action_1.Action.Entity(new Objective_1.Objective.Id(v.id), v.title, v.parents.map(function (v) {
       return new Action_1.Action.Id(v);
-    }), DataStoreUtils.dataToMetaData(v.metaData));
+    }), DataStoreUtils.dataToMetaData(v.metaData, now));
   };
 
   return DataStoreUtils;
@@ -1757,8 +1763,9 @@ function () {
       }
 
       console.log(raw);
+      var now = new Date();
       _this.list = JSON.parse(raw).map(function (v) {
-        return DataStoreUtils_1.DataStoreUtils.dataToObjectiveEntity(v);
+        return DataStoreUtils_1.DataStoreUtils.dataToObjectiveEntity(v, now);
       });
       callback(null, _this.list);
     });
@@ -1784,8 +1791,9 @@ function () {
       }
 
       console.log(raw);
+      var now = new Date();
       _this.actions = JSON.parse(raw).map(function (v) {
-        return DataStoreUtils_1.DataStoreUtils.dataToActionEntity(v);
+        return DataStoreUtils_1.DataStoreUtils.dataToActionEntity(v, now);
       });
       callback(null, _this.actions);
     });

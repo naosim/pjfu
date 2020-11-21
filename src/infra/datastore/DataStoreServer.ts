@@ -43,7 +43,8 @@ export class DataStoreServer implements DataStore {
         this.textIO.saveObjectives(raw, (err) => {})
       }
       console.log(raw);
-      this.list = JSON.parse(raw).map(v => DataStoreUtils.dataToObjectiveEntity(v));
+      var now = new Date();
+      this.list = JSON.parse(raw).map(v => DataStoreUtils.dataToObjectiveEntity(v, now));
       callback(null, this.list)
     })
   }
@@ -63,7 +64,8 @@ export class DataStoreServer implements DataStore {
         this.textIO.saveActions(raw, (err) => {})
       }
       console.log(raw);
-      this.actions = JSON.parse(raw).map(v => DataStoreUtils.dataToActionEntity(v));
+      var now = new Date();
+      this.actions = JSON.parse(raw).map(v => DataStoreUtils.dataToActionEntity(v, now));
   
       callback(null, this.actions)
     })

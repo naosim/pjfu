@@ -139,7 +139,7 @@ export class PjfuVue {
           id,
           this.data.editForm.title,
           this.data.editForm.parents.get()[0],
-          this.data.editForm.detail.get()
+          this.data.editForm.detail.get(new Date())
         )
         this.objectiveRepository.update(newEntity, callbackOnSaved);
       },
@@ -148,7 +148,7 @@ export class PjfuVue {
           id,
           this.data.editForm.title,
           this.data.editForm.parents.get(),
-          this.data.editForm.detail.get()
+          this.data.editForm.detail.get(new Date())
         )
         this.actionRepository.update(newEntity, callbackOnSaved);
       }
@@ -171,7 +171,7 @@ export class PjfuVue {
         id,
         this.data.editForm.title,
         this.data.editForm.parents.get()[0],
-        this.data.editForm.detail.get()
+        this.data.editForm.detail.get(new Date())
       )
       this.objectiveRepository.insert(newEntity, (e) => {
         console.log('callback');
@@ -194,7 +194,7 @@ export class PjfuVue {
         id,
         this.data.editForm.title,
         this.data.editForm.parents.get(),
-        this.data.editForm.detail.get()
+        this.data.editForm.detail.get(new Date())
       )
       this.actionRepository.insert(newEntity, (e) => {
         console.log('callback');
@@ -282,11 +282,11 @@ export class TaskView {
     now: Date
   ) {
     this.text = `${task.limitDate.raw} ${title} ${task.title}` + (task.status.isNotEmpty() ? ` [${task.status.raw}]` : '')
-    this.limitTimestamp = task.limitDate.getDate(now).getTime()
+    this.limitTimestamp = task.limitDate.time
     this.isDone = task.status.isDone();
     this.isIn2Weeks = task.limitDate.isIn2Weeks(now);
   }
   static empty(now: Date): TaskView {
-    return new TaskView(new AnyId(''), '', new Task(new TaskLimitDate(''), '', new TaskStatus('')), now)
+    return new TaskView(new AnyId(''), '', new Task(new TaskLimitDate('', ''), '', new TaskStatus('')), now)
   }
 }

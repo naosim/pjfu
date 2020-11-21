@@ -23,24 +23,32 @@ export class Note implements StringValueObject {
 }
 
 export class TaskLimitDate {
-  constructor(readonly raw: string) {
+  readonly date: Date
+  readonly time: number
+  constructor(readonly raw: string, readonly dateString: string) {
+    this.date = new Date(dateString);
+    this.time = this.date.getTime();
   }
-  getDate(now: Date) {
-    return TaskLimitDate.textToDate(this.raw, now);
-  }
+
   /**
    * 過去2週間から未来2週間以内(だいたい)
    * @param now 
    */
   isIn2Weeks(now: Date): boolean {
-    const d = this.getDate(now).getTime();
+    const d = this.time;
     const day = 24 * 60 * 60 * 1000;
     return now.getTime() - 15 * day < d && d < now.getTime() + 15 * day;
   }
   toObject(): any {
-    return this.raw;
+    return {
+      raw: this.raw,
+      dateString: this.date.toLocaleDateString()
+    };
   }
-  static textToDate(raw: string, now: Date): Date {
+  static create(raw: string, now: Date): TaskLimitDate {
+    return new TaskLimitDate(raw, TaskLimitDate.textToDate(raw, now).toLocaleDateString())
+  }
+  private static textToDate(raw: string, now: Date): Date {
     if(raw.length == 0) {
       return new Date('2999/12/31');
     }

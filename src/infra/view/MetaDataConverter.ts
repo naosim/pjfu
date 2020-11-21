@@ -13,13 +13,13 @@ export class MetaDataForm {
   set(metaData: MetaData) {
     this.value = MetaDataConverter.toText(metaData);
   }
-  get(): MetaData {
-    return MetaDataConverter.toMetaData(this.value);
+  get(now: Date): MetaData {
+    return MetaDataConverter.toMetaData(this.value, now);
   }
 }
 
 export class MetaDataConverter {
-  static toMetaData(text: string): MetaData {
+  static toMetaData(text: string, now: Date): MetaData {
     if (text.trim()[0] != '#') {
       return new MetaData(text, [], [], Note.empty(), []);
     }
@@ -30,13 +30,13 @@ export class MetaDataConverter {
       obj['担当'] ? obj['担当'].split(',').map(v => v.trim()) : [],
       obj['リンク'] ? obj['リンク'].map(v => new Link(v.name, v.path)) : [],
       new Note(obj['ノート'] || ''),
-      obj['マイルストーン'] ? obj['マイルストーン'].split('\n').map(v => MetaDataConverter.parseTaskLine(v)) : []
+      obj['マイルストーン'] ? obj['マイルストーン'].split('\n').map(v => MetaDataConverter.parseTaskLine(v, now)) : []
     );
   }
 
-  static parseTaskLine(line: string): Task {
+  static parseTaskLine(line: string, now: Date): Task {
     line = line.trim();
-    const limitDate = new TaskLimitDate(line.slice(0, line.indexOf(' ')))
+    const limitDate = TaskLimitDate.create(line.slice(0, line.indexOf(' ')), now)
     var title: string;
     var status: TaskStatus;
     if(line[line.length - 1] == ']') {// ステータスあり
