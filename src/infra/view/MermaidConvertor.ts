@@ -22,7 +22,7 @@ export class MermaidConvertor {
     const noteText = actions.filter(v => v.metaData.note.isNotEmpty()).map(v => `${v.id.value}_note["${v.metaData.note.value.split('\n').join('<br>')}"]:::note`).join('\n');
     const noteArrowText = actions.filter(v => v.metaData.note.isNotEmpty()).map(v => `${v.id.value}_note --- ${v.id.value}`).join('\n');
     return `
-%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '10px', 'lineColor': '#888'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '11px', 'lineColor': '#888'}}}%%
 graph LR
 classDef objective_select stroke-width:4px;
 classDef action fill:#ECFFEC, stroke: #93DB70;

@@ -1057,7 +1057,7 @@ function () {
     }).map(function (v) {
       return v.id.value + "_note --- " + v.id.value;
     }).join('\n');
-    return ("\n%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '10px', 'lineColor': '#888'}}}%%\ngraph LR\nclassDef objective_select stroke-width:4px;\nclassDef action fill:#ECFFEC, stroke: #93DB70;\nclassDef action_select fill:#ECFFEC, stroke: #93DB70, stroke-width:4px;\nclassDef note fill:#FFFFEC, stroke: #DBDB93;\n" + rectText + "\n" + linkText + "\n" + arrowText + "\n" + roundText + "\n" + actionLinkText + "\n" + actionArrowText + "\n" + noteText + "\n" + noteArrowText + "\n  ").trim();
+    return ("\n%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '11px', 'lineColor': '#888'}}}%%\ngraph LR\nclassDef objective_select stroke-width:4px;\nclassDef action fill:#ECFFEC, stroke: #93DB70;\nclassDef action_select fill:#ECFFEC, stroke: #93DB70, stroke-width:4px;\nclassDef note fill:#FFFFEC, stroke: #DBDB93;\n" + rectText + "\n" + linkText + "\n" + arrowText + "\n" + roundText + "\n" + actionLinkText + "\n" + actionArrowText + "\n" + noteText + "\n" + noteArrowText + "\n  ").trim();
   };
 
   return MermaidConvertor;
