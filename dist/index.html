@@ -65,12 +65,12 @@
     
       <h3>タスク</h3>
       <ul>
-        <li v-for="task in tasks.filter(v => !v.isDone)"><a v-bind:href="task.link">{{task.text}}</a></li>
+        <li v-for="task in tasks.filter(v => !v.isDone)"><a v-on:click="onClickTaskLinkButton(task.id)">{{task.text}}</a></li>
       </ul>
 
       <h3>完了済みタスク</h3>
       <ul>
-        <li v-for="task in tasks.filter(v => v.isDone && v.isIn2Weeks)"><a v-bind:href="task.link">{{task.text}}</a></li>
+        <li v-for="task in tasks.filter(v => v.isDone && v.isIn2Weeks)"><a v-on:click="onClickTaskLinkButton(task.id)">{{task.text}}</a></li>
       </ul>
     </div><!-- end .edit -->
 
@@ -78,7 +78,6 @@
       <h3>表示モード<button v-on:click="onClickTreeUpdateButton">反映</button></h3>
       <label><input type="radio" name="viewmode" value="targetTree" v-model="viewMode.modeType" />ツリーターゲット</label>: <input id="rootIdSpan" v-model="viewMode.treeTargetId" value="O0" /><button v-on:click="onClickApplyTreeCenteredFromSelected" v-bind:disabled="editTargetId.length == 0">選択中を反映</button><br>
       <label><input type="radio" name="viewmode" value="member" v-model="viewMode.modeType" />メンバー</label>:<label v-for="member in viewMode.members"><input type="checkbox" name="member" v-bind:value="member" v-model="viewMode.selectedMembers" />{{member}} </label><br>
-      <div>{{viewMode.modeType}} {{viewMode.selectedMembers}}</div>
       <div id="profu" class="mermaid"></div>
       
     </div>

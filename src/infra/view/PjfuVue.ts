@@ -69,7 +69,8 @@ export class PjfuVue {
         onClickSubButton: () => this.createSub(),
         onClickInsertObjectiveButton: () => this.insertObjective(),
         onClickInsertActionButton: () => this.insertAction(),
-        onClickRemoveButton: () => this.remove()
+        onClickRemoveButton: () => this.remove(),
+        onClickTaskLinkButton: (id: AnyId) => this.applyTargetId(id)
       }
     });
     this.onUpdate();
@@ -275,12 +276,11 @@ export class TaskView {
   isDone: boolean;
   isIn2Weeks: boolean;// 過去2週間から未来2週間
   constructor(
-    id: AnyId,
+    readonly id: AnyId,
     title: string,
     task: Task,
     now: Date
   ) {
-    this.link = `#${id.getValue()}`
     this.text = `${task.limitDate.raw} ${title} ${task.title}` + (task.status.isNotEmpty() ? ` [${task.status.raw}]` : '')
     this.limitTimestamp = task.limitDate.getDate(now).getTime()
     this.isDone = task.status.isDone();

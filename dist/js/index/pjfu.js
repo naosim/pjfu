@@ -745,6 +745,9 @@ function () {
           },
           onClickRemoveButton: function onClickRemoveButton() {
             return _this.remove();
+          },
+          onClickTaskLinkButton: function onClickTaskLinkButton(id) {
+            return _this.applyTargetId(id);
           }
         }
       });
@@ -988,7 +991,7 @@ var TaskView =
 /** @class */
 function () {
   function TaskView(id, title, task, now) {
-    this.link = "#" + id.getValue();
+    this.id = id;
     this.text = task.limitDate.raw + " " + title + " " + task.title + (task.status.isNotEmpty() ? " [" + task.status.raw + "]" : '');
     this.limitTimestamp = task.limitDate.getDate(now).getTime();
     this.isDone = task.status.isDone();
