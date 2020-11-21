@@ -73,5 +73,13 @@ domain[a] --> hoge[b]
 
 # ビルド
 ```
-parcel --out-dir ./dist/js/index ./src/index.ts
+parcel --out-dir ./dist/js/index ./src/pjfu.ts
 ```
+
+# Googleスプレッドシート（gas)で利用する方法
+- スプレッドシートを作る
+- objectivesシートとactionsシートを作る
+- スクリプトエディタを開く
+- ./dist/gas/gas.jsの内容をスクリプトエディタにコピペする
+- [ウェブアプリケーションとしての導入]で公開
+- 生成されたサイトを開く
