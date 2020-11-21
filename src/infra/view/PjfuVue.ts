@@ -19,7 +19,6 @@ export class ParentsForm {
 export class PjfuVue { 
   private app: any;
   private data: {
-    message: string,
     viewMode: ViewModeModel
     editTargetId: string;
     editForm: {
@@ -29,9 +28,9 @@ export class PjfuVue {
       detail: MetaDataForm;
       links: { name: string; path: string; }[];
     };
-    tasks: TaskView[]
+    tasks: TaskView[];
+    windowWidth: number;
   } = {
-      message: 'hoge',
       viewMode: {
         modeType: ModeType.targetTree,
         treeTargetId: 'O0',
@@ -46,7 +45,8 @@ export class PjfuVue {
         detail: new MetaDataForm(),
         links: [{ name: '', path: '' }]
       },
-      tasks: [TaskView.empty(new Date())]
+      tasks: [TaskView.empty(new Date())],
+      windowWidth: window.innerWidth
     };
   constructor(
     private objectiveRepository: Objective.Repository,
@@ -74,11 +74,16 @@ export class PjfuVue {
     });
     this.onUpdate();
     this.data.viewMode.selectedMembers = this.data.viewMode.members;// すべてをチェックする
+    window.addEventListener('resize', () => this.handleResize())
     // this.updateTaskList();
     // this.mermaidTreeView.update(this.data.viewMode);
     } catch(e) {
       console.error(e);
     }
+  }
+  handleResize() {
+    this.data.windowWidth = window.innerWidth;
+    // console.log(this.data.windowWidth);
   }
   applyTreeCenteredFromSelected() {
     this.data.viewMode.modeType = ModeType.targetTree;

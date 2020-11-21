@@ -23,18 +23,12 @@
       h3 {
         font-size: 14pt;
       }
-      #app {
-        width: 1720px;
-      }
       .edit {
-        /* background: red; */
         width: 420px;
         display: inline-block;
         vertical-align: top;
       }
       .graph {
-        /* background: blue; */
-        width: 1280px;
         display: inline-block;
         vertical-align: top;
       }
@@ -50,7 +44,7 @@
   </head>
   
   <h1>プロジェクト譜</h1>
-  <div id="app">
+  <div id="app" v-bind:style="{ width: (windowWidth * 1.6) + 'px' }">
     <div class="edit">
       <h3>編集</h3>
       編集対象: <input v-model="editTargetId" /><button id="applyTargetIdButton">反映</button><br>
@@ -80,7 +74,7 @@
       </ul>
     </div><!-- end .edit -->
 
-    <div class="graph">
+    <div class="graph"  v-bind:style="{ width: (windowWidth * 1.6 - 430) + 'px' }">
       <h3>表示モード<button v-on:click="onClickTreeUpdateButton">反映</button></h3>
       <label><input type="radio" name="viewmode" value="targetTree" v-model="viewMode.modeType" />ツリーターゲット</label>: <input id="rootIdSpan" v-model="viewMode.treeTargetId" value="O0" /><button v-on:click="onClickApplyTreeCenteredFromSelected" v-bind:disabled="editTargetId.length == 0">選択中を反映</button><br>
       <label><input type="radio" name="viewmode" value="member" v-model="viewMode.modeType" />メンバー</label>:<label v-for="member in viewMode.members"><input type="checkbox" name="member" v-bind:value="member" v-model="viewMode.selectedMembers" />{{member}} </label><br>

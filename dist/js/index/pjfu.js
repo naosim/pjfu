@@ -694,7 +694,6 @@ function () {
     this.actionRepository = actionRepository;
     this.mermaidTreeView = mermaidTreeView;
     this.data = {
-      message: 'hoge',
       viewMode: {
         modeType: ViewModeModel_1.ModeType.targetTree,
         treeTargetId: 'O0',
@@ -712,7 +711,8 @@ function () {
           path: ''
         }]
       },
-      tasks: [TaskView.empty(new Date())]
+      tasks: [TaskView.empty(new Date())],
+      windowWidth: window.innerWidth
     };
     this.init(Vue);
   }
@@ -750,11 +750,18 @@ function () {
       });
       this.onUpdate();
       this.data.viewMode.selectedMembers = this.data.viewMode.members; // すべてをチェックする
-      // this.updateTaskList();
+
+      window.addEventListener('resize', function () {
+        return _this.handleResize();
+      }); // this.updateTaskList();
       // this.mermaidTreeView.update(this.data.viewMode);
     } catch (e) {
       console.error(e);
     }
+  };
+
+  PjfuVue.prototype.handleResize = function () {
+    this.data.windowWidth = window.innerWidth; // console.log(this.data.windowWidth);
   };
 
   PjfuVue.prototype.applyTreeCenteredFromSelected = function () {
