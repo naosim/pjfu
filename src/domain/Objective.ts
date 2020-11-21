@@ -61,9 +61,10 @@ export module Objective {
 
   export interface ReadRepository {
     findAll(): Objective.Entity[];
-    findById(id: Objective.Id);
+    findById(id: Objective.Id): Objective.Entity;
     findParentsTree(rootId: Objective.Id): Objective.Entity[];
-    findUnder(rootId: Objective.Id);
+    findUnder(rootId: Objective.Id): Objective.Entity[];
+    findByMembers(members: string[]): Objective.Entity[];
   }
 
   export interface Repository extends ReadRepository {

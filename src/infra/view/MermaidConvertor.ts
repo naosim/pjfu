@@ -12,7 +12,7 @@ export class MermaidConvertor {
     const isSelected = (id: string) => id == treeCenterId.getValue() || (selectedId && id == selectedId.getValue())
     const map = {};
     entities.forEach(v => map[v.id.value] = v);
-    const rectText = entities.map(v => `${v.id.value}["${v.title}"]${isSelected(v.id.value) ? ':::objective_select' : ''}`).join('\n');
+    const rectText = entities.map(v => `${v.id.value}["${v.title}<br>${v.metaData.members.join(', ')}"]${isSelected(v.id.value) ? ':::objective_select' : ''}`).join('\n');
     const linkText = entities.map(v => `click ${v.id.value} mermaidCallback`).join('\n');
     const arrowText = entities.filter(v => v.parent && map[v.parent.value]).map(v => `${v.id.value} --> ${v.parent.value}`).join('\n');
 

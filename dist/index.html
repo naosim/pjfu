@@ -23,6 +23,21 @@
       h3 {
         font-size: 14pt;
       }
+      #app {
+        width: 1720px;
+      }
+      .edit {
+        /* background: red; */
+        width: 420px;
+        display: inline-block;
+        vertical-align: top;
+      }
+      .graph {
+        /* background: blue; */
+        width: 1280px;
+        display: inline-block;
+        vertical-align: top;
+      }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/3.14.0/js-yaml.min.js" integrity="sha512-ia9gcZkLHA+lkNST5XlseHz/No5++YBneMsDp1IZRJSbi1YqQvBeskJuG1kR+PH1w7E0bFgEZegcj0EwpXQnww==" crossorigin="anonymous"></script>
@@ -36,13 +51,6 @@
   
   <h1>プロジェクト譜</h1>
   <div id="app">
-  <div class="graph">
-    <div id="profu" class="mermaid"></div>
-    ツリー表示: <input id="rootIdSpan" value="O0" /><button id="applyRootIdButton">反映</button><button id="applyTreeCenteredFromSelected">選択中を反映</button><br>
-  </div>
-  
-    
-
     <div class="edit">
       <h3>編集</h3>
       編集対象: <input v-model="editTargetId" /><button id="applyTargetIdButton">反映</button><br>
@@ -58,16 +66,30 @@
       アクション<br>
       <button v-on:click="onClickSubButton">子要素追加</button>
       <button v-on:click="onClickRemoveButton">削除</button>
-    </div>
-    <h3>タスク</h3>
-    <ul>
-      <li v-for="task in tasks.filter(v => !v.isDone)"><a v-bind:href="task.link">{{task.text}}</a></li>
-    </ul>
+    
+      <h3>タスク</h3>
+      <ul>
+        <li v-for="task in tasks.filter(v => !v.isDone)"><a v-bind:href="task.link">{{task.text}}</a></li>
+      </ul>
 
-    <h3>完了済みタスク</h3>
-    <ul>
-      <li v-for="task in tasks.filter(v => v.isDone && v.isIn2Weeks)"><a v-bind:href="task.link">{{task.text}}</a></li>
-    </ul>
+      <h3>完了済みタスク</h3>
+      <ul>
+        <li v-for="task in tasks.filter(v => v.isDone && v.isIn2Weeks)"><a v-bind:href="task.link">{{task.text}}</a></li>
+      </ul>
+    </div><!-- end .edit -->
+
+    <div class="graph">
+      <h3>表示モード<button v-on:click="onClickTreeUpdateButton">反映</button></h3>
+      <label><input type="radio" name="viewmode" value="targetTree" v-model="viewMode.modeType" />ツリーターゲット</label>: <input id="rootIdSpan" v-model="viewMode.treeTargetId" value="O0" /><button v-on:click="onClickApplyTreeCenteredFromSelected" v-bind:disabled="editTargetId.length == 0">選択中を反映</button><br>
+      <label><input type="radio" name="viewmode" value="member" v-model="viewMode.modeType" />メンバー</label>:<label v-for="member in viewMode.members"><input type="checkbox" name="member" v-bind:value="member" v-model="viewMode.selectedMembers" />{{member}} </label><br>
+      <div>{{viewMode.modeType}} {{viewMode.selectedMembers}}</div>
+      <div id="profu" class="mermaid"></div>
+      
+    </div>
+  
+    
+
+    
   </div>
   <script src="./js/index/pjfu.js"></script>
   <script src="./js/index/main.js"></script>

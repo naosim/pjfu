@@ -50,6 +50,7 @@ export module Action {
      */
     hasChildren(parentId: Objective.Id);
     findChildren(parentId: Objective.Id): Action.Entity[];
+    findByMembers(members: string[]): Action.Entity[];
   }
   export interface Repository extends ReadRepository {
     createId(callback: (err: Error, id: Action.Id) => void): void;

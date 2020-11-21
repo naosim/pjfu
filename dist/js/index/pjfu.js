@@ -629,7 +629,20 @@ function () {
 }();
 
 exports.AnyId = AnyId;
-},{"../../domain/Action":"domain/Action.ts","../../domain/Objective":"domain/Objective.ts"}],"infra/view/PjfuVue.ts":[function(require,module,exports) {
+},{"../../domain/Action":"domain/Action.ts","../../domain/Objective":"domain/Objective.ts"}],"infra/view/ViewModeModel.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.ModeType = void 0;
+var ModeType;
+
+(function (ModeType) {
+  ModeType["targetTree"] = "targetTree";
+  ModeType["member"] = "member";
+})(ModeType = exports.ModeType || (exports.ModeType = {}));
+},{}],"infra/view/PjfuVue.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -646,6 +659,8 @@ var Objective_1 = require("../../domain/Objective");
 var MetaDataConverter_1 = require("./MetaDataConverter");
 
 var AnyId_1 = require("./AnyId");
+
+var ViewModeModel_1 = require("./ViewModeModel");
 
 var ParentsForm =
 /** @class */
@@ -680,7 +695,12 @@ function () {
     this.mermaidTreeView = mermaidTreeView;
     this.data = {
       message: 'hoge',
-      treeTargetId: '',
+      viewMode: {
+        modeType: ViewModeModel_1.ModeType.targetTree,
+        treeTargetId: 'O0',
+        selectedMembers: [],
+        members: []
+      },
       editTargetId: '',
       editForm: {
         id: '',
@@ -705,11 +725,14 @@ function () {
         el: '#app',
         data: this.data,
         methods: {
-          onClickApplyRootIdButton: function onClickApplyRootIdButton() {
-            return _this.applyTreeId();
-          },
           onClickUpdateButton: function onClickUpdateButton() {
             return _this.update();
+          },
+          onClickTreeUpdateButton: function onClickTreeUpdateButton() {
+            return _this.onUpdate();
+          },
+          onClickApplyTreeCenteredFromSelected: function onClickApplyTreeCenteredFromSelected() {
+            return _this.applyTreeCenteredFromSelected();
           },
           onClickSubButton: function onClickSubButton() {
             return _this.createSub();
@@ -725,14 +748,19 @@ function () {
           }
         }
       });
-      this.updateTaskList();
+      this.onUpdate();
+      this.data.viewMode.selectedMembers = this.data.viewMode.members; // すべてをチェックする
+      // this.updateTaskList();
+      // this.mermaidTreeView.update(this.data.viewMode);
     } catch (e) {
       console.error(e);
     }
   };
 
-  PjfuVue.prototype.applyTreeId = function () {
-    console.log('click', this.data.treeTargetId);
+  PjfuVue.prototype.applyTreeCenteredFromSelected = function () {
+    this.data.viewMode.modeType = ViewModeModel_1.ModeType.targetTree;
+    this.data.viewMode.treeTargetId = this.data.editTargetId;
+    this.mermaidTreeView.update(this.data.viewMode);
   };
 
   PjfuVue.prototype.applyTargetId = function (id) {
@@ -774,8 +802,12 @@ function () {
         };
       });
     });
-    this.mermaidTreeView.update(id);
+    this.mermaidTreeView.update(this.data.viewMode, id);
   };
+  /**
+   * 目標または施策を更新する
+   */
+
 
   PjfuVue.prototype.update = function () {
     var _this = this;
@@ -815,6 +847,10 @@ function () {
     this.data.editForm.title = '';
     this.data.editForm.detail.set(domain_1.MetaData.empty());
   };
+  /**
+   * 目標を挿入（新規作成）する
+   */
+
 
   PjfuVue.prototype.insertObjective = function () {
     var _this = this;
@@ -835,6 +871,10 @@ function () {
       });
     });
   };
+  /**
+   * 施策を挿入（新規作成）する
+   */
+
 
   PjfuVue.prototype.insertAction = function () {
     var _this = this;
@@ -855,6 +895,10 @@ function () {
       });
     });
   };
+  /**
+   * 目標または施策を削除する
+   */
+
 
   PjfuVue.prototype.remove = function () {
     var _this = this;
@@ -888,8 +932,25 @@ function () {
   };
 
   PjfuVue.prototype.onUpdate = function () {
-    this.mermaidTreeView.update();
+    // TODO: ここで表示モードの選択リストをいじる
+    this.updateViewModeMembers();
+    this.mermaidTreeView.update(this.data.viewMode);
     this.updateTaskList();
+  };
+
+  PjfuVue.prototype.updateViewModeMembers = function () {
+    var memberMap = {};
+    this.objectiveRepository.findAll().forEach(function (v) {
+      return v.metaData.members.forEach(function (m) {
+        return memberMap[m] = true;
+      });
+    });
+    this.actionRepository.findAll().forEach(function (v) {
+      return v.metaData.members.forEach(function (m) {
+        return memberMap[m] = true;
+      });
+    });
+    this.data.viewMode.members = Object.keys(memberMap);
   };
 
   PjfuVue.prototype.updateTaskList = function () {
@@ -935,7 +996,7 @@ function () {
 }();
 
 exports.TaskView = TaskView;
-},{"../../domain/domain":"domain/domain.ts","../../domain/Action":"domain/Action.ts","../../domain/Objective":"domain/Objective.ts","./MetaDataConverter":"infra/view/MetaDataConverter.ts","./AnyId":"infra/view/AnyId.ts"}],"infra/view/MermaidConvertor.ts":[function(require,module,exports) {
+},{"../../domain/domain":"domain/domain.ts","../../domain/Action":"domain/Action.ts","../../domain/Objective":"domain/Objective.ts","./MetaDataConverter":"infra/view/MetaDataConverter.ts","./AnyId":"infra/view/AnyId.ts","./ViewModeModel":"infra/view/ViewModeModel.ts"}],"infra/view/MermaidConvertor.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -958,7 +1019,7 @@ function () {
       return map[v.id.value] = v;
     });
     var rectText = entities.map(function (v) {
-      return v.id.value + "[\"" + v.title + "\"]" + (isSelected(v.id.value) ? ':::objective_select' : '');
+      return v.id.value + "[\"" + v.title + "<br>" + v.metaData.members.join(', ') + "\"]" + (isSelected(v.id.value) ? ':::objective_select' : '');
     }).join('\n');
     var linkText = entities.map(function (v) {
       return "click " + v.id.value + " mermaidCallback";
@@ -1004,11 +1065,31 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.MermaidTreeView = void 0;
 
-var Action_1 = require("../../domain/Action");
-
 var MermaidConvertor_1 = require("./MermaidConvertor");
 
 var AnyId_1 = require("./AnyId");
+
+var ViewModeModel_1 = require("./ViewModeModel");
+
+function merge(a, b) {
+  var c = {
+    objectiveMap: {},
+    actionMap: {}
+  };
+  Object.keys(a.objectiveMap).forEach(function (k) {
+    return c.objectiveMap[k] = a.objectiveMap[k];
+  });
+  Object.keys(b.objectiveMap).forEach(function (k) {
+    return c.objectiveMap[k] = b.objectiveMap[k];
+  });
+  Object.keys(a.actionMap).forEach(function (k) {
+    return c.actionMap[k] = a.actionMap[k];
+  });
+  Object.keys(b.actionMap).forEach(function (k) {
+    return c.actionMap[k] = b.actionMap[k];
+  });
+  return c;
+}
 
 var MermaidTreeView =
 /** @class */
@@ -1019,24 +1100,16 @@ function () {
     this.mermaid = mermaid;
   }
 
-  MermaidTreeView.prototype.update = function (id) {
+  MermaidTreeView.prototype.findRelated = function (anyId) {
     var _this = this;
 
-    var idInHtml = document.querySelector('#rootIdSpan').value;
-    var anyId = new AnyId_1.AnyId(idInHtml);
-    var selectedId = id || [document.querySelector('#selectedIdSpan')].filter(function (v) {
-      return v;
-    }).map(function (v) {
-      return new AnyId_1.AnyId(v.innerHTML);
-    })[0];
     var objectiveMap = {};
     var actionMap = {};
-    var objectives = [];
     var parents = null;
     anyId.forEach(function (id) {
       parents = [id];
     }, function (id) {
-      var current = _this.actionRepository.findById(new Action_1.Action.Id(idInHtml));
+      var current = _this.actionRepository.findById(id);
 
       parents = current.parents;
       parents.forEach(function (p) {
@@ -1060,8 +1133,42 @@ function () {
         return objectiveMap[v.id.value] = v;
       });
     });
-    var element = document.querySelector("#profu");
-    var text = MermaidConvertor_1.MermaidConvertor.toMermaidScript(Object.values(objectiveMap), Object.values(actionMap), anyId, selectedId); // console.log(text);
+    return {
+      objectiveMap: objectiveMap,
+      actionMap: actionMap
+    };
+  };
+
+  MermaidTreeView.prototype.update = function (viewMode, selectedId) {
+    var _this = this;
+
+    var anyId = new AnyId_1.AnyId(viewMode.treeTargetId);
+    selectedId = selectedId || [viewMode.treeTargetId].filter(function (v) {
+      return v;
+    }).map(function (v) {
+      return new AnyId_1.AnyId(v);
+    })[0];
+    var related;
+
+    if (viewMode.modeType == ViewModeModel_1.ModeType.targetTree) {
+      related = this.findRelated(anyId);
+    } else if (viewMode.modeType == ViewModeModel_1.ModeType.member) {
+      related = {
+        objectiveMap: {},
+        actionMap: {}
+      };
+      this.objectiveRepository.findByMembers(viewMode.selectedMembers).forEach(function (e) {
+        related = merge(related, _this.findRelated(new AnyId_1.AnyId(e.id.value)));
+      });
+      this.actionRepository.findByMembers(viewMode.selectedMembers).forEach(function (e) {
+        related = merge(related, _this.findRelated(new AnyId_1.AnyId(e.id.value)));
+      });
+      console.log(related); // related = this.findRelated(new AnyId('O0'));
+    }
+
+    var element = document.querySelector("#profu"); // 全ての中でquerySelectorを使っていいのはここだけ！
+
+    var text = MermaidConvertor_1.MermaidConvertor.toMermaidScript(Object.values(related.objectiveMap), Object.values(related.actionMap), anyId, selectedId); // console.log(text);
 
     this.mermaid.mermaidAPI.render('graphDiv', text, function (svg, bind) {
       element.innerHTML = svg;
@@ -1073,7 +1180,7 @@ function () {
 }();
 
 exports.MermaidTreeView = MermaidTreeView;
-},{"../../domain/Action":"domain/Action.ts","./MermaidConvertor":"infra/view/MermaidConvertor.ts","./AnyId":"infra/view/AnyId.ts"}],"infra/InMemoryDataStore.ts":[function(require,module,exports) {
+},{"./MermaidConvertor":"infra/view/MermaidConvertor.ts","./AnyId":"infra/view/AnyId.ts","./ViewModeModel":"infra/view/ViewModeModel.ts"}],"infra/InMemoryDataStore.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1187,6 +1294,27 @@ function () {
 
     return (this.parentMap[parentId.value] || []).map(function (id) {
       return _this.findById(id);
+    });
+  };
+
+  ActionRepositoryImpl.prototype.findByMembers = function (members) {
+    console.log(members);
+    var map = {};
+    var list = this.findAll().filter(function (v) {
+      return v.metaData.members.length > 0;
+    }); // メンバー有りだけにする
+
+    list.forEach(function (e) {
+      return e.metaData.members.forEach(function (m) {
+        return members.forEach(function (v) {
+          if (m == v) {
+            map[e.id.value] = e;
+          }
+        });
+      });
+    });
+    return Object.keys(map).map(function (k) {
+      return map[k];
     });
   };
 
@@ -1360,6 +1488,27 @@ function () {
     };
 
     return getChildren(rootId);
+  };
+
+  ObjectiveRepositoryImpl.prototype.findByMembers = function (members) {
+    console.log(members);
+    var map = {};
+    var list = this.findAll().filter(function (v) {
+      return v.metaData.members.length > 0;
+    }); // メンバー有りだけにする
+
+    list.forEach(function (e) {
+      return e.metaData.members.forEach(function (m) {
+        return members.forEach(function (v) {
+          if (m == v) {
+            map[e.id.value] = e;
+          }
+        });
+      });
+    });
+    return Object.keys(map).map(function (k) {
+      return map[k];
+    });
   };
 
   ObjectiveRepositoryImpl.prototype.onUpdate = function () {
@@ -1861,8 +2010,7 @@ function pjfu(keyValueIo) {
   dataStore.findAll(function (err, objectives, actions) {
     var objectiveRepository = new ObjectiveRepositoryImpl_1.ObjectiveRepositoryImpl(dataStore, objectives);
     var actionRepository = new ActionRepositoryImpl_1.ActionRepositoryImpl(dataStore, actions);
-    var mermaidTreeView = new MermaidTreeView_1.MermaidTreeView(objectiveRepository, actionRepository, window['mermaid']);
-    var pjfuVue = new PjfuVue_1.PjfuVue(objectiveRepository, actionRepository, mermaidTreeView, window['Vue']); // 編集フォームはURLのハッシュに従う
+    var pjfuVue = new PjfuVue_1.PjfuVue(objectiveRepository, actionRepository, new MermaidTreeView_1.MermaidTreeView(objectiveRepository, actionRepository, window['mermaid']), window['Vue']); // 編集フォームはURLのハッシュに従う
 
     var updateFormByHash = function updateFormByHash() {
       return pjfuVue.applyTargetId(new AnyId_1.AnyId(window.location.hash.slice(1)));
@@ -1872,20 +2020,13 @@ function pjfu(keyValueIo) {
 
     if (location.hash) {
       updateFormByHash();
-    }
+    } // mermaidの矩形をクリックした時に呼ばれるメソッド
+    // グローバルに定義するしかない
+
 
     window['mermaidCallback'] = function (id) {
       pjfuVue.applyTargetId(new AnyId_1.AnyId(id));
     };
-
-    mermaidTreeView.update();
-    document.querySelector('#applyRootIdButton').addEventListener('click', function () {
-      return mermaidTreeView.update();
-    });
-    document.querySelector('#applyTreeCenteredFromSelected').addEventListener('click', function () {
-      document.querySelector('#rootIdSpan').value = document.querySelector('#selectedIdSpan').innerHTML;
-      mermaidTreeView.update();
-    });
   });
 }
 

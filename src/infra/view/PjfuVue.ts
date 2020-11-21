@@ -4,6 +4,7 @@ import { Objective } from "../../domain/Objective";
 import { MetaDataForm } from './MetaDataConverter';
 import { AnyId } from './AnyId';
 import { MermaidTreeView } from './MermaidTreeView';
+import { ViewModeModel, ModeType } from './ViewModeModel';
 
 export class ParentsForm {
   value = '';
@@ -19,7 +20,7 @@ export class PjfuVue {
   private app: any;
   private data: {
     message: string,
-    treeTargetId: string;
+    viewMode: ViewModeModel
     editTargetId: string;
     editForm: {
       id: string;
@@ -31,7 +32,12 @@ export class PjfuVue {
     tasks: TaskView[]
   } = {
       message: 'hoge',
-      treeTargetId: '',
+      viewMode: {
+        modeType: ModeType.targetTree,
+        treeTargetId: 'O0',
+        selectedMembers: [],
+        members: []
+      },
       editTargetId: '',
       editForm: {
         id: '',
@@ -57,22 +63,27 @@ export class PjfuVue {
       el: '#app',
       data: this.data,
       methods: {
-        onClickApplyRootIdButton: () => this.applyTreeId(),
         onClickUpdateButton: () => this.update(),
+        onClickTreeUpdateButton: () => this.onUpdate(),
+        onClickApplyTreeCenteredFromSelected: () => this.applyTreeCenteredFromSelected(),
         onClickSubButton: () => this.createSub(),
         onClickInsertObjectiveButton: () => this.insertObjective(),
         onClickInsertActionButton: () => this.insertAction(),
         onClickRemoveButton: () => this.remove()
       }
     });
-    this.updateTaskList();
+    this.onUpdate();
+    this.data.viewMode.selectedMembers = this.data.viewMode.members;// すべてをチェックする
+    // this.updateTaskList();
+    // this.mermaidTreeView.update(this.data.viewMode);
     } catch(e) {
       console.error(e);
     }
   }
-
-  applyTreeId() {
-    console.log('click', this.data.treeTargetId);
+  applyTreeCenteredFromSelected() {
+    this.data.viewMode.modeType = ModeType.targetTree;
+    this.data.viewMode.treeTargetId = this.data.editTargetId;
+    this.mermaidTreeView.update(this.data.viewMode);
   }
   applyTargetId(id: AnyId) {
     console.log(id);
@@ -96,8 +107,11 @@ export class PjfuVue {
         this.data.editForm.links = action.metaData.links.map(v => ({name: v.name, path: v.path}))
       }
     )
-    this.mermaidTreeView.update(id);
+    this.mermaidTreeView.update(this.data.viewMode, id);
   }
+  /**
+   * 目標または施策を更新する
+   */
   update() {
     console.log('update');
     const callbackOnSaved = (e) => {
@@ -142,6 +156,9 @@ export class PjfuVue {
     this.data.editForm.detail.set(MetaData.empty());
   }
 
+  /**
+   * 目標を挿入（新規作成）する
+   */
   insertObjective() {
     this.objectiveRepository.createId((err, id) => {
       const newEntity = new Objective.Entity(
@@ -162,6 +179,9 @@ export class PjfuVue {
     })
   }
 
+  /**
+   * 施策を挿入（新規作成）する
+   */
   insertAction() {
     this.actionRepository.createId((err, id) => {
       const newEntity = new Action.Entity(
@@ -182,6 +202,9 @@ export class PjfuVue {
     })
   }
 
+  /**
+   * 目標または施策を削除する
+   */
   remove() {
     const anyId = new AnyId(this.data.editForm.id);
     anyId.forEach(
@@ -218,9 +241,16 @@ export class PjfuVue {
   }
 
   onUpdate() {
-    this.mermaidTreeView.update();
+    // TODO: ここで表示モードの選択リストをいじる
+    this.updateViewModeMembers();
+    this.mermaidTreeView.update(this.data.viewMode);
     this.updateTaskList();
-    
+  }
+  updateViewModeMembers() {
+    var memberMap = {};
+    this.objectiveRepository.findAll().forEach(v => v.metaData.members.forEach(m => memberMap[m] = true));
+    this.actionRepository.findAll().forEach(v => v.metaData.members.forEach(m => memberMap[m] = true));
+    this.data.viewMode.members = Object.keys(memberMap);
   }
   updateTaskList() {
     const tasks:TaskView[] = []

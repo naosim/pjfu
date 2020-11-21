@@ -58,7 +58,17 @@ export class ObjectiveRepositoryImpl implements Objective.Repository {
 
     return getChildren(rootId);
   }
-
+  findByMembers(members: string[]): Objective.Entity[] {
+    console.log(members);
+    const map:{[key:string]: Objective.Entity} = {}
+    var list = this.findAll().filter(v => v.metaData.members.length > 0);// メンバー有りだけにする
+    list.forEach(e => e.metaData.members.forEach(m => members.forEach(v => {
+      if(m == v) {
+        map[e.id.value] = e;
+      }
+    })))
+    return Object.keys(map).map(k => map[k]);
+  }
   private onUpdate() {
     this.parentMap = {}
     this.findAll().filter(v => v.parent).forEach(v => {

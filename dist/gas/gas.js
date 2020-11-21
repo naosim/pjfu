@@ -13,6 +13,7 @@ function createHtml() {
 }
 
 function mainJs() {
+  // KeyValueIOの実装
   var js = `pjfu({
     save: function(key, value, callback) { google.script.run.withSuccessHandler((value)=> callback(null)).withFailureHandler((e) => callback(e)).savePjfu(key, value); },
     load: function(key, callback) {google.script.run.withSuccessHandler((value)=> callback(null, value)).withFailureHandler((e) => callback(e, null)).loadPjfu(key);}

@@ -37,6 +37,18 @@ export class ActionRepositoryImpl implements Action.Repository {
     return (this.parentMap[parentId.value] || []).map(id => this.findById(id));
   }
 
+  findByMembers(members: string[]): Action.Entity[] {
+    console.log(members);
+    const map:{[key:string]: Action.Entity} = {}
+    var list = this.findAll().filter(v => v.metaData.members.length > 0);// メンバー有りだけにする
+    list.forEach(e => e.metaData.members.forEach(m => members.forEach(v => {
+      if(m == v) {
+        map[e.id.value] = e;
+      }
+    })))
+    return Object.keys(map).map(k => map[k]);
+  }
+
   private onUpdate() {
     this.parentMap = {}
     this.findAll().forEach(v => {

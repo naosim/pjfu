@@ -18,15 +18,14 @@ export function pjfu(keyValueIo: KeyValueIO) {
   dataStore.findAll((err, objectives, actions) => {
     const objectiveRepository: Objective.Repository = new ObjectiveRepositoryImpl(dataStore, objectives);
     const actionRepository: Action.Repository = new ActionRepositoryImpl(dataStore, actions);
-    const mermaidTreeView = new MermaidTreeView(
-      objectiveRepository,
-      actionRepository,
-      window['mermaid']
-    );
     const pjfuVue = new PjfuVue(
       objectiveRepository,
       actionRepository,
-      mermaidTreeView,
+      new MermaidTreeView(
+        objectiveRepository,
+        actionRepository,
+        window['mermaid']
+      ),
       window['Vue']
     );
 
@@ -36,14 +35,10 @@ export function pjfu(keyValueIo: KeyValueIO) {
     if (location.hash) {
       updateFormByHash();
     }
-    window['mermaidCallback'] = (id: string) => { pjfuVue.applyTargetId(new AnyId(id)); }
 
-    mermaidTreeView.update();
-    document.querySelector('#applyRootIdButton').addEventListener('click', () => mermaidTreeView.update());
-    document.querySelector('#applyTreeCenteredFromSelected').addEventListener('click', () => {
-      ((document.querySelector('#rootIdSpan') as unknown) as {value:string}).value = document.querySelector('#selectedIdSpan').innerHTML
-      mermaidTreeView.update()
-    });
+    // mermaidの矩形をクリックした時に呼ばれるメソッド
+    // グローバルに定義するしかない
+    window['mermaidCallback'] = (id: string) => { pjfuVue.applyTargetId(new AnyId(id)); }
   });
 }
 
