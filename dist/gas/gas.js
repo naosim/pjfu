@@ -6,7 +6,7 @@ function createHtml() {
   var jsUrl = 'https://raw.githubusercontent.com/naosim/pjfu/main/dist/js/index/pjfu.js';
   var html = UrlFetchApp.fetch(htmlUrl).getContentText();
   var js = UrlFetchApp.fetch(jsUrl).getContentText();
-  html = html.split('<script type="module" src="./js/pjfu.js"></script>').join('<script>' + js + '</script>')
+  html = html.split('<script type="module" src="./js/pjfu.js"></script>').join('<script type="module">' + js + '</script>')
   return html;
 }
 
