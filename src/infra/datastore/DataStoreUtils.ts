@@ -5,40 +5,40 @@ import {
   Task,
   TaskLimitDate,
   TaskStatus
-} from '../../domain/domain';
-import { Action } from "../../domain/Action";
-import { Objective } from "../../domain/Objective";
+} from '../../domain/domain.ts';
+import { Action } from "../../domain/Action.ts";
+import { Objective } from "../../domain/Objective.ts";
 
 
 
 export class DataStoreUtils {
 
-  private static dataToMetaData(mataDataObj, now: Date): MetaData {
+  private static dataToMetaData(mataDataObj: any, now: Date): MetaData {
     
     return new MetaData(
       mataDataObj.description,
       mataDataObj.members || [],
-      mataDataObj.links ? mataDataObj.links.map(v => new Link(v.name, v.path)) : [],
+      mataDataObj.links ? mataDataObj.links.map((v:any) => new Link(v.name, v.path)) : [],
       new Note(mataDataObj.note || ''),
-      mataDataObj.tasks ? mataDataObj.tasks.map(v => new Task(v.limitDate.dateString ? new TaskLimitDate(v.limitDate.raw, v.limitDate.dateString) : TaskLimitDate.create(v.limitDate, now), v.title, new TaskStatus(v.status || ''))) : []
+      mataDataObj.tasks ? mataDataObj.tasks.map((v:any) => new Task(v.limitDate.dateString ? new TaskLimitDate(v.limitDate.raw, v.limitDate.dateString) : TaskLimitDate.create(v.limitDate, now), v.title, new TaskStatus(v.status || ''))) : []
     )
   }
 
-  static dataToObjectiveEntity(v, now: Date): Objective.Entity {
+  static dataToObjectiveEntity(v: any, now: Date): Objective.Entity {
     // console.log(DataStoreUtils.dataToMetaData(v.metaData));
     return new Objective.Entity(
       new Objective.Id(v.id),
       v.title,
-      v.parent ? new Objective.Id(v.parent) : null,
-      DataStoreUtils.dataToMetaData(v.metaData, now)
+      DataStoreUtils.dataToMetaData(v.metaData, now),
+      v.parent ? new Objective.Id(v.parent) : undefined
     );
   }
 
-  static dataToActionEntity(v, now: Date): Action.Entity {
+  static dataToActionEntity(v: any, now: Date): Action.Entity {
     return new Action.Entity(
-      new Objective.Id(v.id),
+      new Action.Id(v.id),
       v.title,
-      v.parents.map(v => new Action.Id(v)),
+      v.parents.map((v:string) => new Action.Id(v)),
       DataStoreUtils.dataToMetaData(v.metaData, now)
     );
   }

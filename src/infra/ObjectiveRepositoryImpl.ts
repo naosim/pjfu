@@ -1,6 +1,6 @@
-import { Objective } from "../domain/Objective";
-import { InMemoryDataStore } from './InMemoryDataStore';
-import { ObjectiveDataStore } from "./datastore/ObjectiveDataStore";
+import { Objective } from "../domain/Objective.ts";
+import { InMemoryDataStore } from './InMemoryDataStore.ts';
+import { ObjectiveDataStore } from "./datastore/ObjectiveDataStore.ts";
 
 export class ObjectiveRepositoryImpl implements Objective.Repository {
   private inMemoryObjectiveDataStore: InMemoryDataStore<Objective.Id, Objective.Entity>;
@@ -11,9 +11,9 @@ export class ObjectiveRepositoryImpl implements Objective.Repository {
     this.onUpdate();
   }
 
-  createId(callback: (err: Error, id: Objective.Id) => void): void {
+  createId(callback: (err?: Error, id?: Objective.Id) => void): void {
     const num = Math.floor(Date.now() / 1000);
-    setTimeout(() => callback(null, Objective.Id.create(num)), 100);
+    setTimeout(() => callback(undefined, Objective.Id.create(num)), 100);
   }
 
   findAll(): Objective.Entity[] {
@@ -30,14 +30,14 @@ export class ObjectiveRepositoryImpl implements Objective.Repository {
       parentTrunkList.push(id);
       const entity = this.findById(id);
       if(entity.isNotRoot) {
-        findParentTrunk(entity.parent)
+        findParentTrunk(entity.parent!)
       }
     };
     var current = this.findById(rootId);
     if(current.isRoot) {
       return [];
     }
-    findParentTrunk(current.parent);
+    findParentTrunk(current.parent!);
     var result: Objective.Entity[] = [];
     parentTrunkList.forEach(p => {
       this.parentMap[p.value].forEach(v => result.push(this.findById(v)));
@@ -72,14 +72,14 @@ export class ObjectiveRepositoryImpl implements Objective.Repository {
   private onUpdate() {
     this.parentMap = {}
     this.findAll().filter(v => v.parent).forEach(v => {
-      if (!this.parentMap[v.parent.value]) {
-        this.parentMap[v.parent.value] = [];
+      if (!this.parentMap[v.parent!.value]) {
+        this.parentMap[v.parent!.value] = [];
       }
-      this.parentMap[v.parent.value].push(v.id);
+      this.parentMap[v.parent!.value].push(v.id);
     });
   }
 
-  update(entity: Objective.Entity, callback: (e) => void) {
+  update(entity: Objective.Entity, callback: (e?:Error) => void) {
     if(!this.inMemoryObjectiveDataStore.isExist(entity.id)) {
       callback(new Error('entity not found: ' + entity.id.value));
         return;
@@ -91,11 +91,11 @@ export class ObjectiveRepositoryImpl implements Objective.Repository {
       }
       this.inMemoryObjectiveDataStore.update(entity);
       this.onUpdate();
-      callback(null);
+      callback();
     });
   }
 
-  insert(entity: Objective.Entity, callback: (e) => void) {
+  insert(entity: Objective.Entity, callback: (e?:Error) => void) {
     if(this.inMemoryObjectiveDataStore.isExist(entity.id)) {
       callback(new Error('entity already exists: ' + entity.id.value));
         return;
@@ -107,11 +107,11 @@ export class ObjectiveRepositoryImpl implements Objective.Repository {
       }
       this.inMemoryObjectiveDataStore.insert(entity);
       this.onUpdate();
-      callback(null);
+      callback();
     });
   }
 
-  remove(id: Objective.Id, callback: (e) => void) {
+  remove(id: Objective.Id, callback: (e?:Error) => void) {
     if (this.parentMap[id.value]) {
       callback(new Error('children already exists'));
     }
@@ -127,7 +127,7 @@ export class ObjectiveRepositoryImpl implements Objective.Repository {
       }
       this.inMemoryObjectiveDataStore.remove(id);
       this.onUpdate();
-      callback(null);
+      callback();
     });
   }
 }

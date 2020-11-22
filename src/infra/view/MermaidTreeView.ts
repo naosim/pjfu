@@ -1,9 +1,14 @@
-import { Action } from "../../domain/Action";
-import { Objective } from "../../domain/Objective";
-import { MermaidConvertor } from './MermaidConvertor';
-import { AnyId } from './AnyId';
-import { ModeType, ViewModeModel } from "./ViewModeModel";
+import { Action } from "../../domain/Action.ts";
+import { Objective } from "../../domain/Objective.ts";
+import { MermaidConvertor } from './MermaidConvertor.ts';
+import { AnyId } from './AnyId.ts';
+import { ModeType, ViewModeModel } from "./ViewModeModel.ts";
 
+declare global {
+  interface Window {
+    document: any;
+  }
+}
 type ObjectivesAndActionsMap = {objectiveMap: { [key: string]: Objective.Entity; }, actionMap:{ [key: string]: Action.Entity; }}
 
 function merge(a: ObjectivesAndActionsMap, b: ObjectivesAndActionsMap) {
@@ -25,7 +30,7 @@ export class MermaidTreeView {
   findRelated(anyId: AnyId): ObjectivesAndActionsMap {
     const objectiveMap: { [key: string]: Objective.Entity; } = {};
     const actionMap: { [key: string]: Action.Entity; } = {};
-    var parents: Objective.Id[] = null;
+    var parents: Objective.Id[] = [];
     anyId.forEach(
       id => {
         parents = [id];
@@ -58,7 +63,7 @@ export class MermaidTreeView {
   update(viewMode:ViewModeModel, selectedId?: AnyId) {
     const anyId = new AnyId(viewMode.treeTargetId);
     selectedId = selectedId || [viewMode.treeTargetId].filter(v => v).map(v => new AnyId(v))[0];
-    var related: ObjectivesAndActionsMap;
+    var related: ObjectivesAndActionsMap = {objectiveMap:{}, actionMap:{}};
     if(viewMode.modeType == ModeType.targetTree) {
       related = this.findRelated(anyId);
     } else if(viewMode.modeType == ModeType.member) {
@@ -70,7 +75,7 @@ export class MermaidTreeView {
     }
     
 
-    var element = document.querySelector("#profu");// 全ての中でquerySelectorを使っていいのはここだけ！
+    var element = window.document.querySelector("#profu");// 全ての中でquerySelectorを使っていいのはここだけ！
     var text = MermaidConvertor.toMermaidScript(
       Object.values(related.objectiveMap),
       Object.values(related.actionMap),
@@ -81,7 +86,7 @@ export class MermaidTreeView {
     this.mermaid.mermaidAPI.render(
       'graphDiv', 
       text, 
-      (svg, bind) => {
+      (svg:any, bind:any) => {
         element.innerHTML = svg;
         bind(element);
       });

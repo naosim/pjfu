@@ -1,7 +1,7 @@
 import {
   EntityIf,
   StringValueObject
-} from '../domain/domain';
+} from '../domain/domain.ts';
 
 export class InMemoryDataStore<I extends StringValueObject, E extends EntityIf<I>> {
   private entityMap: { [key: string]: E; };

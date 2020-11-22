@@ -1,7 +1,7 @@
-import { Action } from "../domain/Action";
-import { Objective } from "../domain/Objective";
-import { InMemoryDataStore } from './InMemoryDataStore';
-import { ActionDataStore } from "./datastore/ActionDataStore";
+import { Action } from "../domain/Action.ts";
+import { Objective } from "../domain/Objective.ts";
+import { InMemoryDataStore } from './InMemoryDataStore.ts';
+import { ActionDataStore } from "./datastore/ActionDataStore.ts";
 
 export class ActionRepositoryImpl implements Action.Repository {
   private inMemoryActionDataStore: InMemoryDataStore<Action.Id, Action.Entity>;
@@ -12,9 +12,9 @@ export class ActionRepositoryImpl implements Action.Repository {
     this.onUpdate();
   }
 
-  createId(callback: (err: Error, id: Action.Id) => void): void {
+  createId(callback: (err?: Error, id?: Action.Id) => void): void {
     const num = Math.floor(Date.now() / 1000);
-    setTimeout(() => callback(null, Action.Id.create(num)), 100);
+    setTimeout(() => callback(undefined, Action.Id.create(num)), 100);
   }
 
   findAll(): Action.Entity[] {
@@ -61,7 +61,7 @@ export class ActionRepositoryImpl implements Action.Repository {
     });
   }
 
-  update(entity: Action.Entity, callback: (e) => void) {
+  update(entity: Action.Entity, callback: (e?: Error) => void) {
     if (!this.inMemoryActionDataStore.isExist(entity.id)) {
       throw new Error(`entity not found: ${entity.id.value}`);
     }
@@ -71,11 +71,11 @@ export class ActionRepositoryImpl implements Action.Repository {
         return;
       }
       this.inMemoryActionDataStore.update(entity);
-      callback(null);
+      callback();
     });
   }
 
-  insert(entity: Action.Entity, callback: (e) => void) {
+  insert(entity: Action.Entity, callback: (e?:Error) => void) {
     if (this.inMemoryActionDataStore.isExist(entity.id)) {
       throw new Error(`entity already exists: ${entity.id.value}`);
     }
@@ -86,11 +86,11 @@ export class ActionRepositoryImpl implements Action.Repository {
       }
       this.inMemoryActionDataStore.insert(entity);
       this.onUpdate();
-      callback(null);
+      callback();
     });
   }
 
-  remove(id: Action.Id, callback: (e) => void) {
+  remove(id: Action.Id, callback: (e?:Error) => void) {
     if (!this.inMemoryActionDataStore.isExist(id)) {
       throw new Error(`entity not found: ${id.value}`);
     }
@@ -101,7 +101,7 @@ export class ActionRepositoryImpl implements Action.Repository {
       }
       this.inMemoryActionDataStore.remove(id);
       this.onUpdate();
-      callback(null);
+      callback();
     });
   }
 }

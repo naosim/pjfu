@@ -1,5 +1,5 @@
-import { Objective } from "./Objective";
-import { EntityIf, MetaData, StringValueObject } from "./domain";
+import { Objective } from "./Objective.ts";
+import { EntityIf, MetaData, StringValueObject } from "./domain.ts";
 
 
 
@@ -43,20 +43,20 @@ export module Action {
 
   export interface ReadRepository {
     findAll(): Action.Entity[];
-    findById(id: Action.Id);
+    findById(id: Action.Id): Action.Entity;
     /**
      * 指定したIDに子要素はあるか？
      * @param parentId 
      */
-    hasChildren(parentId: Objective.Id);
+    hasChildren(parentId: Objective.Id): boolean;
     findChildren(parentId: Objective.Id): Action.Entity[];
     findByMembers(members: string[]): Action.Entity[];
   }
   export interface Repository extends ReadRepository {
-    createId(callback: (err: Error, id: Action.Id) => void): void;
+    createId(callback: (err?: Error, id?: Action.Id) => void): void;
     
-    update(entity: Action.Entity, callback: (e) => void);
-    insert(entity: Action.Entity, callback: (e) => void);
-    remove(id: Action.Id, callback: (e) => void);
+    update(entity: Action.Entity, callback: (e?: Error) => void): void;
+    insert(entity: Action.Entity, callback: (e?: Error) => void): void;
+    remove(id: Action.Id, callback: (e?: Error) => void): void;
   }
 }
