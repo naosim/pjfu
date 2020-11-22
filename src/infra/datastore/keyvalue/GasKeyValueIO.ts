@@ -7,9 +7,9 @@ declare global {
 
 export class GasKeyValueIO implements KeyValueIO {
   save(key: string, value: string, callback: (err?: Error) => void) {
-    window.google.script.run.withSuccessHandler((value:any)=> callback()).withFailureHandler((e:any) => callback(e)).savePjfu(key, value);
+    window.google.script.run.withSuccessHandler((value:any)=> callback()).withFailureHandler((e:any) => callback(e)).saveGasKeyValue(key, value);
   }
   load(key: string, callback: (err?: Error, value?: string) => void) {
-    window.google.script.run.withSuccessHandler((value:any)=> callback(undefined, value)).withFailureHandler((e:any) => callback(e)).loadPjfu(key);
+    window.google.script.run.withSuccessHandler((value:any)=> callback(undefined, value)).withFailureHandler((e:any) => callback(e)).loadGasKeyValue(key);
   }
 }

@@ -1475,10 +1475,10 @@ System.register("infra/datastore/keyvalue/GasKeyValueIO", [], function (exports_
         execute: function () {
             GasKeyValueIO = class GasKeyValueIO {
                 save(key, value, callback) {
-                    window.google.script.run.withSuccessHandler((value) => callback()).withFailureHandler((e) => callback(e)).savePjfu(key, value);
+                    window.google.script.run.withSuccessHandler((value) => callback()).withFailureHandler((e) => callback(e)).saveGasKeyValue(key, value);
                 }
                 load(key, callback) {
-                    window.google.script.run.withSuccessHandler((value) => callback(undefined, value)).withFailureHandler((e) => callback(e)).loadPjfu(key);
+                    window.google.script.run.withSuccessHandler((value) => callback(undefined, value)).withFailureHandler((e) => callback(e)).loadGasKeyValue(key);
                 }
             };
             exports_22("GasKeyValueIO", GasKeyValueIO);

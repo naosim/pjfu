@@ -10,12 +10,12 @@ function createHtml() {
   return html;
 }
 
-function savePjfu(key, value) {
+function saveGasKeyValue(key, value) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(key);
   return sheet.getRange(1, 1, 1, 1).setValue(value);
 }
 
-function loadPjfu(key) {
+function loadGasKeyValue(key) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(key);
   return sheet.getRange(1, 1, 1, 1).getValue();
 }
