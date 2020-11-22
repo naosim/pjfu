@@ -8,10 +8,10 @@ import { Objective } from './domain/Objective.ts';
 import { Action } from './domain/Action.ts';
 import { PjfuTextIO } from "./infra/datastore/TextIO.ts";
 import { DataStoreServer } from "./infra/datastore/DataStoreServer.ts";
-import { LocalStrageKeyValueIO } from './infra/datastore/keyvalue/LocalStrageKeyValueIO.ts';
-import { GithubKeyValueIO, IssueNumber } from './infra/datastore/keyvalue/GithubKeyValueIO.ts';
-import { KeyValueIO } from './infra/datastore/keyvalue/KeyValueIO.ts';
-import { GasKeyValueIO } from "./infra/datastore/keyvalue/GasKeyValueIO.ts";
+import { LocalStrageKeyValueIO } from 'https://raw.githubusercontent.com/naosim/key-value-io/main/src/LocalStrageKeyValueIO.ts';
+import { GithubKeyValueIO, IssueNumber } from 'https://raw.githubusercontent.com/naosim/key-value-io/main/src/GithubKeyValueIO.ts';
+import { KeyValueIO } from 'https://raw.githubusercontent.com/naosim/key-value-io/main/src/KeyValueIO.ts';
+import { GasKeyValueIO } from "https://raw.githubusercontent.com/naosim/key-value-io/main/src/GasKeyValueIO.ts";
 declare global {
   interface Window {
     alert: (message?: any) => void;

@@ -1,4 +1,4 @@
-import { KeyValueIO } from "./keyvalue/KeyValueIO.ts";
+import { KeyValueIO } from 'https://raw.githubusercontent.com/naosim/key-value-io/main/src/KeyValueIO.ts';
 
 export class PjfuTextIO {
   constructor(private keyValueIo: KeyValueIO) {}
