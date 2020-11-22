@@ -67,6 +67,7 @@ export class TaskLimitDate {
         ]
       )
     }
+    throw new Error('不明: ' + raw);
   }
   private static near(now: Date, dates: Date[]) {
     const diffs = dates.map(v => Math.abs(v.getTime() - now.getTime()));

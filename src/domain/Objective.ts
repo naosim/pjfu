@@ -1,4 +1,4 @@
-import { EntityIf, MetaData, StringValueObject } from "./domain";
+import { EntityIf, MetaData, StringValueObject } from "./domain.ts";
 
 
 
@@ -9,8 +9,8 @@ export module Objective {
     constructor(
       readonly id: Id,
       readonly title: string,
-      readonly parent: Id,
-      readonly metaData: MetaData
+      readonly metaData: MetaData,
+      readonly parent?: Id
     ) {
       this.isRoot = parent ? false : true;
       this.isNotRoot = !this.isRoot;
@@ -35,7 +35,6 @@ export module Objective {
       return new Entity(
         Id.create(0),
         'root',
-        null,
         MetaData.empty()
       );
     }
@@ -53,8 +52,10 @@ export module Objective {
       return this.value;
     }
 
-    eq(other: Id): boolean {
-
+    eq(other?: Id): boolean {
+      if(!other) {
+        return false;
+      }
       return other && this.value === other.value;
     }
   }
@@ -68,9 +69,9 @@ export module Objective {
   }
 
   export interface Repository extends ReadRepository {
-    createId(callback: (err: Error, id: Objective.Id) => void): void;
-    update(entity: Objective.Entity, callback: (e) => void);
-    insert(entity: Objective.Entity, callback: (e) => void);
-    remove(id: Objective.Id, callback: (e) => void);
+    createId(callback: (err?: Error, id?: Objective.Id) => void): void;
+    update(entity: Objective.Entity, callback: (e?: Error) => void): void;
+    insert(entity: Objective.Entity, callback: (e?: Error) => void): void;
+    remove(id: Objective.Id, callback: (e?: Error) => void): void;
   }
 }

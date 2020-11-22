@@ -1,11 +1,16 @@
-import { MetaData, Task, TaskLimitDate, TaskStatus } from '../../domain/domain';
-import { Action } from "../../domain/Action";
-import { Objective } from "../../domain/Objective";
-import { MetaDataForm } from './MetaDataConverter';
-import { AnyId } from './AnyId';
-import { MermaidTreeView } from './MermaidTreeView';
-import { ViewModeModel, ModeType } from './ViewModeModel';
-
+import { MetaData, Task, TaskLimitDate, TaskStatus } from '../../domain/domain.ts';
+import { Action } from "../../domain/Action.ts";
+import { Objective } from "../../domain/Objective.ts";
+import { MetaDataForm } from './MetaDataConverter.ts';
+import { AnyId } from './AnyId.ts';
+import { MermaidTreeView } from './MermaidTreeView.ts';
+import { ViewModeModel, ModeType } from './ViewModeModel.ts';
+declare global {
+  interface Window {
+    alert: any;
+    innerWidth: any;
+  }
+}
 export class ParentsForm {
   value = '';
   set(parents: Objective.Id[]) {
@@ -99,7 +104,7 @@ export class PjfuVue {
         this.data.editTargetId = objective.id.value;
         this.data.editForm.id = objective.id.value;
         this.data.editForm.title = objective.title;
-        this.data.editForm.parents.set(objective.isNotRoot ? [objective.parent] : [])
+        this.data.editForm.parents.set(objective.isNotRoot ? [objective.parent!] : [])
         this.data.editForm.detail.set(objective.metaData)
         this.data.editForm.links = objective.metaData.links.map(v => ({name: v.name, path: v.path}))
       },
@@ -120,10 +125,10 @@ export class PjfuVue {
    */
   update() {
     console.log('update');
-    const callbackOnSaved = (e) => {
+    const callbackOnSaved = (e?:Error) => {
       if(e) {
         console.error(e);
-        alert('エラー: ' + e.message);
+        window.alert('エラー: ' + e.message);
         return;
       }
       this.onUpdate();
@@ -138,8 +143,8 @@ export class PjfuVue {
         const newEntity = new Objective.Entity(
           id,
           this.data.editForm.title,
-          this.data.editForm.parents.get()[0],
-          this.data.editForm.detail.get(new Date())
+          this.data.editForm.detail.get(new Date()),
+          this.data.editForm.parents.get()[0]
         )
         this.objectiveRepository.update(newEntity, callbackOnSaved);
       },
@@ -166,18 +171,23 @@ export class PjfuVue {
    * 目標を挿入（新規作成）する
    */
   insertObjective() {
-    this.objectiveRepository.createId((err, id) => {
+    this.objectiveRepository.createId((err?, id?) => {
+      if(err) {
+        console.error(err);
+        window.alert('エラー: ' + err.message);
+        return;
+      }
       const newEntity = new Objective.Entity(
-        id,
+        id!,
         this.data.editForm.title,
+        this.data.editForm.detail.get(new Date()),
         this.data.editForm.parents.get()[0],
-        this.data.editForm.detail.get(new Date())
       )
       this.objectiveRepository.insert(newEntity, (e) => {
         console.log('callback');
         if(e) {
           console.error(e);
-          alert('エラー: ' + e.message);
+          window.alert('エラー: ' + e.message);
           return;
         }
         this.onUpdate();
@@ -189,9 +199,14 @@ export class PjfuVue {
    * 施策を挿入（新規作成）する
    */
   insertAction() {
-    this.actionRepository.createId((err, id) => {
+    this.actionRepository.createId((err?, id?) => {
+      if(err) {
+        console.error(err);
+        window.alert('エラー: ' + err.message);
+        return;
+      }
       const newEntity = new Action.Entity(
-        id,
+        id!,
         this.data.editForm.title,
         this.data.editForm.parents.get(),
         this.data.editForm.detail.get(new Date())
@@ -200,7 +215,7 @@ export class PjfuVue {
         console.log('callback');
         if(e) {
           console.error(e);
-          alert('エラー: ' + e.message);
+          window.alert('エラー: ' + e.message);
           return;
         }
         this.onUpdate();
@@ -216,14 +231,14 @@ export class PjfuVue {
     anyId.forEach(
       id => {
         if(this.actionRepository.hasChildren(id)) {
-          alert('子要素を消してください');
+          window.alert('子要素を消してください');
           throw new Error('子要素を消してください');
         }
         this.objectiveRepository.remove(
           id,
           (e) => {
             if(e) {
-              alert(e.message);
+              window.alert(e.message);
               throw e;
             }
             this.onUpdate();
@@ -236,7 +251,7 @@ export class PjfuVue {
           id,
           (e) => {
             if(e) {
-              alert(e.message);
+              window.alert(e.message);
               throw e;
             }
             this.onUpdate();
@@ -253,7 +268,7 @@ export class PjfuVue {
     this.updateTaskList();
   }
   updateViewModeMembers() {
-    var memberMap = {};
+    var memberMap:{[key:string]: any} = {};
     this.objectiveRepository.findAll().forEach(v => v.metaData.members.forEach(m => memberMap[m] = true));
     this.actionRepository.findAll().forEach(v => v.metaData.members.forEach(m => memberMap[m] = true));
     this.data.viewMode.members = Object.keys(memberMap);
@@ -270,7 +285,6 @@ export class PjfuVue {
 
 
 export class TaskView {
-  link: string;
   text: string;
   limitTimestamp: number;
   isDone: boolean;

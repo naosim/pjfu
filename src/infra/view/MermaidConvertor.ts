@@ -1,6 +1,6 @@
-import { Action } from "../../domain/Action";
-import { Objective } from "../../domain/Objective";
-import { AnyId } from "./AnyId";
+import { Action } from "../../domain/Action.ts";
+import { Objective } from "../../domain/Objective.ts";
+import { AnyId } from "./AnyId.ts";
 
 export class MermaidConvertor {
   static toMermaidScript(
@@ -10,11 +10,11 @@ export class MermaidConvertor {
     selectedId?: AnyId
   ) {
     const isSelected = (id: string) => id == treeCenterId.getValue() || (selectedId && id == selectedId.getValue())
-    const map = {};
+    const map: {[key:string]:Objective.Entity} = {};
     entities.forEach(v => map[v.id.value] = v);
     const rectText = entities.map(v => `${v.id.value}["${v.title}<br>${v.metaData.members.join(', ')}"]${isSelected(v.id.value) ? ':::objective_select' : ''}`).join('\n');
     const linkText = entities.map(v => `click ${v.id.value} mermaidCallback`).join('\n');
-    const arrowText = entities.filter(v => v.parent && map[v.parent.value]).map(v => `${v.id.value} --> ${v.parent.value}`).join('\n');
+    const arrowText = entities.filter(v => v.parent && map[v.parent.value]).map(v => `${v.id.value} --> ${v.parent!.value}`).join('\n');
 
     const roundText = actions.map(v => `${v.id.value}("${v.title}<br>${v.metaData.members.join(', ')}"):::action${isSelected(v.id.value) ? '_select' : ''}`).join('\n');
     const actionLinkText = actions.map(v => `click ${v.id.value} mermaidCallback`).join('\n');

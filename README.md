@@ -60,7 +60,7 @@ Task <|-- Action
 - ライブラリ
   - FW: vue
   - 描画: mermaid
-  - バンドラー: percel
+  - バンドラー: deno
 
 - データの保存先は選べるように
 - データの読み込みは初回1回のみ。あとはリロードするまで同期なし
@@ -73,7 +73,7 @@ domain[a] --> hoge[b]
 
 # ビルド
 ```
-parcel --out-dir ./dist/js/index ./src/pjfu.ts
+deno bundle src/pjfu.ts dist/js/pjfu.js
 ```
 
 # Googleスプレッドシート（gas)で利用する方法

@@ -1,6 +1,6 @@
-import { Action } from "../../domain/Action";
-import { StringValueObject } from "../../domain/domain";
-import { Objective } from "../../domain/Objective";
+import { Action } from "../../domain/Action.ts";
+import { StringValueObject } from "../../domain/domain.ts";
+import { Objective } from "../../domain/Objective.ts";
 
 export class AnyId {
   constructor(private id: string) { }

@@ -1,23 +1,44 @@
 
-import { PjfuVue } from './infra/view/PjfuVue';
-import { MermaidTreeView } from "./infra/view/MermaidTreeView";
-import { ActionRepositoryImpl } from "./infra/ActionRepositoryImpl";
-import { ObjectiveRepositoryImpl } from "./infra/ObjectiveRepositoryImpl";
-import { AnyId } from './infra/view/AnyId';
-import { Objective } from './domain/Objective';
-import { Action } from './domain/Action';
-import { PjfuTextIO } from "./infra/datastore/TextIO";
-import { DataStoreServer } from "./infra/datastore/DataStoreServer";
-import { LocalStrageKeyValueIO } from './infra/datastore/keyvalue/LocalStrageKeyValueIO';
-import { GithubKeyValueIO } from './infra/datastore/keyvalue/GithubKeyValueIO';
-import { KeyValueIO } from './infra/datastore/keyvalue/KeyValueIO';
-import { IssueNumber } from './infra/datastore/keyvalue/IssueRepositoryImpl';
+import { PjfuVue } from './infra/view/PjfuVue.ts';
+import { MermaidTreeView } from "./infra/view/MermaidTreeView.ts";
+import { ActionRepositoryImpl } from "./infra/ActionRepositoryImpl.ts";
+import { ObjectiveRepositoryImpl } from "./infra/ObjectiveRepositoryImpl.ts";
+import { AnyId } from './infra/view/AnyId.ts';
+import { Objective } from './domain/Objective.ts';
+import { Action } from './domain/Action.ts';
+import { PjfuTextIO } from "./infra/datastore/TextIO.ts";
+import { DataStoreServer } from "./infra/datastore/DataStoreServer.ts";
+import { LocalStrageKeyValueIO } from './infra/datastore/keyvalue/LocalStrageKeyValueIO.ts';
+import { GithubKeyValueIO, IssueNumber } from './infra/datastore/keyvalue/GithubKeyValueIO.ts';
+import { KeyValueIO } from './infra/datastore/keyvalue/KeyValueIO.ts';
+import { GasKeyValueIO } from "./infra/datastore/keyvalue/GasKeyValueIO.ts";
+declare global {
+  interface Window {
+    alert: any;
+    location: any;
+    google: any;
+    Vue: any;
+    mermaid: any;
+    mermaidCallback: any;
+    LocalStrageKeyValueIO: any;
+    GithubKeyValueIO: any;
+    IssueNumber: any;
+    pjfu: any;
+  }
+}
+// declare const window: any;
+declare const location: any;
 
 export function pjfu(keyValueIo: KeyValueIO) {
   const dataStore = new DataStoreServer(new PjfuTextIO(keyValueIo));
   dataStore.findAll((err, objectives, actions) => {
-    const objectiveRepository: Objective.Repository = new ObjectiveRepositoryImpl(dataStore, objectives);
-    const actionRepository: Action.Repository = new ActionRepositoryImpl(dataStore, actions);
+    if(err) {
+      console.error(err);
+      window.alert(err.message);
+      return;
+    }
+    const objectiveRepository: Objective.Repository = new ObjectiveRepositoryImpl(dataStore, objectives!);
+    const actionRepository: Action.Repository = new ActionRepositoryImpl(dataStore, actions!);
     const pjfuVue = new PjfuVue(
       objectiveRepository,
       actionRepository,
@@ -46,4 +67,7 @@ export function pjfu(keyValueIo: KeyValueIO) {
 window['LocalStrageKeyValueIO'] = LocalStrageKeyValueIO
 window['GithubKeyValueIO'] = GithubKeyValueIO
 window['IssueNumber'] = IssueNumber
-window['pjfu'] = pjfu
+window['pjfu'] = pjfu;
+
+const keyValueIo: KeyValueIO = window.google ? new GasKeyValueIO() : new LocalStrageKeyValueIO();
+pjfu(keyValueIo)
