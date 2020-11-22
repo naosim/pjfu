@@ -7,7 +7,7 @@ import { MermaidTreeView } from './MermaidTreeView.ts';
 import { ViewModeModel, ModeType } from './ViewModeModel.ts';
 declare global {
   interface Window {
-    alert: any;
+    alert: (message?: any) => void;
     innerWidth: any;
   }
 }

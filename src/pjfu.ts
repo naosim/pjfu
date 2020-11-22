@@ -14,7 +14,7 @@ import { KeyValueIO } from './infra/datastore/keyvalue/KeyValueIO.ts';
 import { GasKeyValueIO } from "./infra/datastore/keyvalue/GasKeyValueIO.ts";
 declare global {
   interface Window {
-    alert: any;
+    alert: (message?: any) => void;
     location: any;
     google: any;
     Vue: any;
