@@ -12,6 +12,7 @@ import { LocalStrageKeyValueIO } from 'https://raw.githubusercontent.com/naosim/
 import { GithubKeyValueIO, IssueNumber } from 'https://raw.githubusercontent.com/naosim/key-value-io/main/src/GithubKeyValueIO.ts';
 import { KeyValueIO } from 'https://raw.githubusercontent.com/naosim/key-value-io/main/src/KeyValueIO.ts';
 import { GasKeyValueIO } from "https://raw.githubusercontent.com/naosim/key-value-io/main/src/GasKeyValueIO.ts";
+import { TaskService } from "./service/service.ts";
 declare global {
   interface Window {
     alert: (message?: any) => void;
@@ -47,6 +48,7 @@ export function pjfu(keyValueIo: KeyValueIO) {
         actionRepository,
         window['mermaid']
       ),
+      new TaskService(objectiveRepository, actionRepository),
       window['Vue']
     );
 

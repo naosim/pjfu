@@ -48,6 +48,9 @@ export class TaskLimitDate {
   static create(raw: string, now: Date): TaskLimitDate {
     return new TaskLimitDate(raw, TaskLimitDate.textToDate(raw, now).toLocaleDateString())
   }
+  static unlimited(): TaskLimitDate {
+    return new TaskLimitDate('', '2999/12/31');
+  }
   private static textToDate(raw: string, now: Date): Date {
     if(raw.length == 0) {
       return new Date('2999/12/31');
