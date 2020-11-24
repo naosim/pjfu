@@ -291,6 +291,9 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/domain/Obje
                     constructor(value) {
                         this.value = value;
                         this._class = 'Objective.Id';
+                        if (!value || value.length == 0) {
+                            throw new Error('bad id:' + value);
+                        }
                     }
                     static create(num) {
                         return new Id('O' + num);
@@ -669,6 +672,9 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/
                     this.value = parents.map(v => v.value).join(', ');
                 }
                 get() {
+                    if (this.value.trim().length == 0) {
+                        return [];
+                    }
                     return this.value.split(',').map(v => new Objective_ts_2.Objective.Id(v.trim()));
                 }
             };
@@ -886,6 +892,9 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/
                     });
                 }
                 remove() {
+                    if (!window.confirm('削除してよろしいですか？')) {
+                        return;
+                    }
                     this.data.editForm.forEachId(id => {
                         if (this.actionRepository.hasChildren(id)) {
                             window.alert('子要素を消してください');
@@ -1150,7 +1159,11 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/infra/Objec
                     return this.inMemoryObjectiveDataStore.findAll();
                 }
                 findById(id) {
-                    return this.inMemoryObjectiveDataStore.findById(id);
+                    const result = this.inMemoryObjectiveDataStore.findById(id);
+                    if (!result) {
+                        throw new Error('objective not found: ' + id.value);
+                    }
+                    return result;
                 }
                 findParentsTree(rootId) {
                     const parentTrunkList = [];

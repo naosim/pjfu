@@ -9,6 +9,7 @@ import { PjfuTask, TaskService } from "../../service/service.ts";
 declare global {
   interface Window {
     alert: (message?: any) => void;
+    confirm: (message?: any) => boolean;
     innerWidth: any;
   }
 }
@@ -150,6 +151,9 @@ export class PjfuVue {
    * 目標または施策を削除する
    */
   remove() {
+    if(!window.confirm('削除してよろしいですか？')) {
+      return;
+    }
     this.data.editForm.forEachId(
       id => {
         if(this.actionRepository.hasChildren(id)) {

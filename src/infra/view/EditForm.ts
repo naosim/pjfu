@@ -10,6 +10,9 @@ export class ParentsForm {
     this.value = parents.map(v => v.value).join(', ');
   }
   get(): Objective.Id[] {
+    if(this.value.trim().length == 0) {
+      return []
+    }
     return this.value.split(',').map(v => new Objective.Id(v.trim()));
   }
   
