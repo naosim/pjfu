@@ -561,8 +561,6 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/
                     this.value = MetaDataConverter.toText(metaData);
                 }
                 get(now) {
-                    console.log('value', this.value);
-                    console.log('meta', MetaDataConverter.toMetaData(this.value, now));
                     return MetaDataConverter.toMetaData(this.value, now);
                 }
             };
@@ -716,7 +714,6 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/
                 toEntity(objectiveCallback, actionCallback) {
                     const anyId = this.getAnyId();
                     anyId.forEach(id => {
-                        console.log(new Objective_ts_2.Objective.Entity(id, this.title, this.detail.get(new Date()), this.parents.get()[0]));
                         objectiveCallback(new Objective_ts_2.Objective.Entity(id, this.title, this.detail.get(new Date()), this.parents.get()[0]));
                     }, id => {
                         actionCallback(new Action_ts_2.Action.Entity(id, this.title, this.parents.get(), this.detail.get(new Date())));
