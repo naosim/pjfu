@@ -43,7 +43,11 @@ export module Objective {
     private _class = 'Objective.Id';
     constructor(
       readonly value: string
-    ) { }
+    ) {
+      if(!value || value.length == 0) {
+        throw new Error('bad id:' + value);
+      }
+    }
     static create(num: number): Id {
       return new Id('O' + num);
     }

@@ -47,20 +47,19 @@
   <div id="app" v-bind:style="{ width: (windowWidth * 1.6) + 'px' }">
     <div class="edit">
       <h3>編集</h3>
-      編集対象: <input v-model="editTargetId" /><button id="applyTargetIdButton">反映</button><br>
-      ID: <span id="selectedIdSpan">{{editForm.id}}</span><br>
+      編集対象: <input v-model="editTargetId" /><br>
+      ID: <span id="selectedIdSpan">{{editForm.id}}</span><button v-on:click="onClickSubButton" v-bind:disabled="editForm.id.length == 0">子要素追加</button><br>
       タイトル: <input v-model="editForm.title" /><br>
       上位: <input v-model="editForm.parents.value"/><br>
       <textarea v-model="editForm.detail.value"></textarea><br>
-      <button v-on:click="onClickUpdateButton" v-bind:disabled="editForm.id.length == 0">更新</button>
-      <button v-on:click="onClickInsertObjectiveButton"  v-bind:disabled="editForm.id.length > 0 || editForm.parents.value.length == 0">新規目標作成</button>
-      <button v-on:click="onClickInsertActionButton" v-bind:disabled="editForm.id.length > 0 || editForm.parents.value.length == 0">新規施策作成</button><br>
+      <button v-on:click="onClickUpdateButton" v-bind:disabled="editForm.title.length == 0 || editForm.id.length == 0">更新</button>
+      <button v-on:click="onClickInsertObjectiveButton"  v-bind:disabled="editForm.title.length == 0 || editForm.id.length > 0 || editForm.parents.value.length == 0">新規目標作成</button>
+      <button v-on:click="onClickInsertActionButton" v-bind:disabled="editForm.title.length == 0 || editForm.id.length > 0 || editForm.parents.value.length == 0">新規施策作成</button><br>
       リンク<br>
       <ul>
         <li v-for="link in editForm.links"><a v-bind:href="link.path" target="_blank">{{link.name}}</a></li>
       </ul>
       アクション<br>
-      <button v-on:click="onClickSubButton" v-bind:disabled="editForm.id.length == 0">子要素追加</button>
       <button v-on:click="onClickRemoveButton" v-bind:disabled="editForm.id.length == 0">削除</button>
     
       <h3>タスク</h3>

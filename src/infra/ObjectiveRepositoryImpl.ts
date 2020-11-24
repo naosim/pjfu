@@ -20,8 +20,12 @@ export class ObjectiveRepositoryImpl implements Objective.Repository {
     return this.inMemoryObjectiveDataStore.findAll();
   }
 
-  findById(id: Objective.Id) {
-    return this.inMemoryObjectiveDataStore.findById(id);
+  findById(id: Objective.Id): Objective.Entity {
+    const result = this.inMemoryObjectiveDataStore.findById(id);
+    if(!result) {
+      throw new Error('objective not found: ' + id.value);
+    }
+    return result;
   }
 
   findParentsTree(rootId: Objective.Id): Objective.Entity[] {
