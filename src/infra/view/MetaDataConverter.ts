@@ -81,15 +81,14 @@ export class MetaDataConverter {
     }, []).reduce((memo:any, lines) => {
       const key = lines[0].split('#')[1].split(':')[0].trim();
       lines[0] = lines[0].indexOf(':') != -1 ? lines[0].slice(lines[0].indexOf(':') + 1) : '';
-      var value0:string = lines.join('\n').trim();
-      var value: any;
-      if(value0.indexOf('- [') == 0) {
-        value = value0.split('\n').map(v => {
+      var value:any = lines.join('\n').trim();
+      if(value.indexOf('- [') == 0) {
+        value = value.split('\n').map((v:any) => {
           return {
             name: v.split('[')[1].split(']')[0],
             path: v.split('(')[1].split(')')[0],
           }
-        }).reduce((memo:any[], v) => {
+        }).reduce((memo:any[], v:any) => {
           memo.push(v);
           return memo;
         }, [])
