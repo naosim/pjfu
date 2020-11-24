@@ -45,32 +45,29 @@ export class PjfuVue {
   }
   init(Vue: any) {
     try {
-    this.app = new Vue({
-      el: '#app',
-      data: this.data,
-      methods: {
-        onClickUpdateButton: () => this.update(),
-        onClickTreeUpdateButton: () => this.onUpdate(),
-        onClickApplyTreeCenteredFromSelected: () => this.applyTreeCenteredFromSelected(),
-        onClickSubButton: () => this.createSub(),
-        onClickInsertObjectiveButton: () => this.insertObjective(),
-        onClickInsertActionButton: () => this.insertAction(),
-        onClickRemoveButton: () => this.remove(),
-        onClickTaskLinkButton: (id: AnyId) => this.applyTargetId(id)
-      }
-    });
-    this.onUpdate();
-    this.data.viewMode.selectedMembers = this.data.viewMode.members;// すべてをチェックする
-    window.addEventListener('resize', () => this.handleResize())
-    // this.updateTaskList();
-    // this.mermaidTreeView.update(this.data.viewMode);
+      this.app = new Vue({
+        el: '#app',
+        data: this.data,
+        methods: {
+          onClickUpdateButton: () => this.update(),
+          onClickTreeUpdateButton: () => this.onUpdate(),
+          onClickApplyTreeCenteredFromSelected: () => this.applyTreeCenteredFromSelected(),
+          onClickSubButton: () => this.createSub(),
+          onClickInsertObjectiveButton: () => this.insertObjective(),
+          onClickInsertActionButton: () => this.insertAction(),
+          onClickRemoveButton: () => this.remove(),
+          onClickTaskLinkButton: (id: AnyId) => this.applyTargetId(id)
+        }
+      });
+      this.onUpdate();
+      this.data.viewMode.selectedMembers = this.data.viewMode.members;// すべてをチェックする
+      window.addEventListener('resize', () => this.handleResize())
     } catch(e) {
       console.error(e);
     }
   }
   handleResize() {
     this.data.windowWidth = window.innerWidth;
-    // console.log(this.data.windowWidth);
   }
   applyTreeCenteredFromSelected() {
     this.data.viewMode.modeType = ModeType.targetTree;
@@ -97,18 +94,9 @@ export class PjfuVue {
    * 目標または施策を更新する
    */
   update() {
-    console.log('update');
-    const callbackOnSaved = (e?:Error) => {
-      if(e) {
-        console.error(e);
-        window.alert('エラー: ' + e.message);
-        return;
-      }
-      this.onUpdate();
-    }
     this.data.editForm.toEntity(
-      o => this.objectiveRepository.update(o, callbackOnSaved), 
-      a => this.actionRepository.update(a, callbackOnSaved)
+      o => this.objectiveRepository.update(o, AlertCallBack.callbackVoid(() => this.onUpdate())), 
+      a => this.actionRepository.update(a, AlertCallBack.callbackVoid(() => this.onUpdate()))
     );
   }
 
@@ -126,15 +114,10 @@ export class PjfuVue {
         window.alert('エラー: ' + err.message);
         return;
       }
-      this.objectiveRepository.insert(this.data.editForm.createObjectiveEntity(id!), (e) => {
-        console.log('callback');
-        if(e) {
-          console.error(e);
-          window.alert('エラー: ' + e.message);
-          return;
-        }
-        this.onUpdate();
-      });
+      this.objectiveRepository.insert(
+        this.data.editForm.createObjectiveEntity(id!), 
+        AlertCallBack.callbackVoid(() => this.onUpdate())
+      );
     })
   }
 
@@ -142,21 +125,24 @@ export class PjfuVue {
    * 施策を挿入（新規作成）する
    */
   insertAction() {
+    this.actionRepository.createId(
+      AlertCallBack.callback(id => {
+        this.actionRepository.insert(
+          this.data.editForm.createActionEntity(id!), 
+          AlertCallBack.callbackVoid(() => this.onUpdate())
+        )
+      })
+    )
     this.actionRepository.createId((err?, id?) => {
       if(err) {
         console.error(err);
         window.alert('エラー: ' + err.message);
         return;
       }
-      this.actionRepository.insert(this.data.editForm.createActionEntity(id!), (e) => {
-        console.log('callback');
-        if(e) {
-          console.error(e);
-          window.alert('エラー: ' + e.message);
-          return;
-        }
-        this.onUpdate();
-      });
+      this.actionRepository.insert(
+        this.data.editForm.createActionEntity(id!), 
+        AlertCallBack.callbackVoid(() => this.onUpdate())
+      );
     })
   }
 
@@ -172,26 +158,13 @@ export class PjfuVue {
         }
         this.objectiveRepository.remove(
           id,
-          (e) => {
-            if(e) {
-              window.alert(e.message);
-              throw e;
-            }
-            this.onUpdate();
-            // onTreeUpdate();
-          }
+          AlertCallBack.callbackVoid(() => this.onUpdate())
         )
       },
       id => {
         this.actionRepository.remove(
           id,
-          (e) => {
-            if(e) {
-              window.alert(e.message);
-              throw e;
-            }
-            this.onUpdate();
-          }
+          AlertCallBack.callbackVoid(() => this.onUpdate())
         )
       }
     )
@@ -255,5 +228,28 @@ export class TaskView {
       task.isDone, 
       task.isIn2Weeks
     )
+  }
+}
+
+class AlertCallBack {
+  static callback<T>(cb:(t:T)=>void):(err?:Error, t?:T)=>void {
+    return (err?:Error, t?:T)=> {
+      if(err) {
+        console.error(err);
+        window.alert('エラー: ' + err.message);
+        return;
+      }
+      cb(t!);
+    }
+  }
+  static callbackVoid<T>(cb:()=>void):(err?:Error)=>void {
+    return (err?:Error)=> {
+      if(err) {
+        console.error(err);
+        window.alert('エラー: ' + err.message);
+        return;
+      }
+      cb();
+    }
   }
 }

@@ -561,6 +561,8 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/
                     this.value = MetaDataConverter.toText(metaData);
                 }
                 get(now) {
+                    console.log('value', this.value);
+                    console.log('meta', MetaDataConverter.toMetaData(this.value, now));
                     return MetaDataConverter.toMetaData(this.value, now);
                 }
             };
@@ -617,10 +619,9 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/
                     }, []).reduce((memo, lines) => {
                         const key = lines[0].split('#')[1].split(':')[0].trim();
                         lines[0] = lines[0].indexOf(':') != -1 ? lines[0].slice(lines[0].indexOf(':') + 1) : '';
-                        var value0 = lines.join('\n').trim();
-                        var value;
-                        if (value0.indexOf('- [') == 0) {
-                            value = value0.split('\n').map(v => {
+                        var value = lines.join('\n').trim();
+                        if (value.indexOf('- [') == 0) {
+                            value = value.split('\n').map((v) => {
                                 return {
                                     name: v.split('[')[1].split(']')[0],
                                     path: v.split('(')[1].split(')')[0],
@@ -715,6 +716,7 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/
                 toEntity(objectiveCallback, actionCallback) {
                     const anyId = this.getAnyId();
                     anyId.forEach(id => {
+                        console.log(new Objective_ts_2.Objective.Entity(id, this.title, this.detail.get(new Date()), this.parents.get()[0]));
                         objectiveCallback(new Objective_ts_2.Objective.Entity(id, this.title, this.detail.get(new Date()), this.parents.get()[0]));
                     }, id => {
                         actionCallback(new Action_ts_2.Action.Entity(id, this.title, this.parents.get(), this.detail.get(new Date())));
@@ -774,7 +776,7 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/service/ser
 });
 System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/PjfuVue", ["file:///Users/fujitanao/googledrive/script/pjfu/src/domain/domain", "file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/AnyId", "file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/ViewModeModel", "file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/EditForm"], function (exports_11, context_11) {
     "use strict";
-    var domain_ts_4, AnyId_ts_4, ViewModeModel_ts_2, EditForm_ts_1, PjfuVue, TaskView;
+    var domain_ts_4, AnyId_ts_4, ViewModeModel_ts_2, EditForm_ts_1, PjfuVue, TaskView, AlertCallBack;
     var __moduleName = context_11 && context_11.id;
     return {
         setters: [
@@ -858,16 +860,7 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/
                     this.mermaidTreeView.update(this.data.viewMode, id);
                 }
                 update() {
-                    console.log('update');
-                    const callbackOnSaved = (e) => {
-                        if (e) {
-                            console.error(e);
-                            window.alert('エラー: ' + e.message);
-                            return;
-                        }
-                        this.onUpdate();
-                    };
-                    this.data.editForm.toEntity(o => this.objectiveRepository.update(o, callbackOnSaved), a => this.actionRepository.update(a, callbackOnSaved));
+                    this.data.editForm.toEntity(o => this.objectiveRepository.update(o, AlertCallBack.callbackVoid(() => this.onUpdate())), a => this.actionRepository.update(a, AlertCallBack.callbackVoid(() => this.onUpdate())));
                 }
                 createSub() {
                     this.data.editForm.setSub();
@@ -879,33 +872,20 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/
                             window.alert('エラー: ' + err.message);
                             return;
                         }
-                        this.objectiveRepository.insert(this.data.editForm.createObjectiveEntity(id), (e) => {
-                            console.log('callback');
-                            if (e) {
-                                console.error(e);
-                                window.alert('エラー: ' + e.message);
-                                return;
-                            }
-                            this.onUpdate();
-                        });
+                        this.objectiveRepository.insert(this.data.editForm.createObjectiveEntity(id), AlertCallBack.callbackVoid(() => this.onUpdate()));
                     });
                 }
                 insertAction() {
+                    this.actionRepository.createId(AlertCallBack.callback(id => {
+                        this.actionRepository.insert(this.data.editForm.createActionEntity(id), AlertCallBack.callbackVoid(() => this.onUpdate()));
+                    }));
                     this.actionRepository.createId((err, id) => {
                         if (err) {
                             console.error(err);
                             window.alert('エラー: ' + err.message);
                             return;
                         }
-                        this.actionRepository.insert(this.data.editForm.createActionEntity(id), (e) => {
-                            console.log('callback');
-                            if (e) {
-                                console.error(e);
-                                window.alert('エラー: ' + e.message);
-                                return;
-                            }
-                            this.onUpdate();
-                        });
+                        this.actionRepository.insert(this.data.editForm.createActionEntity(id), AlertCallBack.callbackVoid(() => this.onUpdate()));
                     });
                 }
                 remove() {
@@ -914,21 +894,9 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/
                             window.alert('子要素を消してください');
                             throw new Error('子要素を消してください');
                         }
-                        this.objectiveRepository.remove(id, (e) => {
-                            if (e) {
-                                window.alert(e.message);
-                                throw e;
-                            }
-                            this.onUpdate();
-                        });
+                        this.objectiveRepository.remove(id, AlertCallBack.callbackVoid(() => this.onUpdate()));
                     }, id => {
-                        this.actionRepository.remove(id, (e) => {
-                            if (e) {
-                                window.alert(e.message);
-                                throw e;
-                            }
-                            this.onUpdate();
-                        });
+                        this.actionRepository.remove(id, AlertCallBack.callbackVoid(() => this.onUpdate()));
                     });
                 }
                 onUpdate() {
@@ -965,6 +933,28 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/
                 }
             };
             exports_11("TaskView", TaskView);
+            AlertCallBack = class AlertCallBack {
+                static callback(cb) {
+                    return (err, t) => {
+                        if (err) {
+                            console.error(err);
+                            window.alert('エラー: ' + err.message);
+                            return;
+                        }
+                        cb(t);
+                    };
+                }
+                static callbackVoid(cb) {
+                    return (err) => {
+                        if (err) {
+                            console.error(err);
+                            window.alert('エラー: ' + err.message);
+                            return;
+                        }
+                        cb();
+                    };
+                }
+            };
         }
     };
 });
