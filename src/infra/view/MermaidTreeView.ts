@@ -27,6 +27,7 @@ export class MermaidTreeView {
     private mermaid: any
   ) {
   }
+
   findRelated(anyId: AnyId): ObjectivesAndActionsMap {
     const objectiveMap: { [key: string]: Objective.Entity; } = {};
     const actionMap: { [key: string]: Action.Entity; } = {};

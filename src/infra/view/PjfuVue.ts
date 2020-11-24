@@ -1,23 +1,15 @@
-import { MetaData, Task, TaskLimitDate, TaskStatus } from '../../domain/domain.ts';
+import { Task, TaskLimitDate, TaskStatus } from '../../domain/domain.ts';
 import { Action } from "../../domain/Action.ts";
 import { Objective } from "../../domain/Objective.ts";
-import { MetaDataForm } from './MetaDataConverter.ts';
 import { AnyId } from './AnyId.ts';
 import { MermaidTreeView } from './MermaidTreeView.ts';
 import { ViewModeModel, ModeType } from './ViewModeModel.ts';
+import { EditForm } from './EditForm.ts';
+import { PjfuTask, TaskService } from "../../service/service.ts";
 declare global {
   interface Window {
     alert: (message?: any) => void;
     innerWidth: any;
-  }
-}
-export class ParentsForm {
-  value = '';
-  set(parents: Objective.Id[]) {
-    this.value = parents.map(v => v.value).join(', ');
-  }
-  get(): Objective.Id[] {
-    return this.value.split(',').map(v => new Objective.Id(v.trim()));
   }
 }
 
@@ -26,13 +18,7 @@ export class PjfuVue {
   private data: {
     viewMode: ViewModeModel
     editTargetId: string;
-    editForm: {
-      id: string;
-      title: string;
-      parents: ParentsForm;
-      detail: MetaDataForm;
-      links: { name: string; path: string; }[];
-    };
+    editForm: EditForm;
     tasks: TaskView[];
     windowWidth: number;
   } = {
@@ -43,20 +29,15 @@ export class PjfuVue {
         members: []
       },
       editTargetId: '',
-      editForm: {
-        id: '',
-        title: '',
-        parents: new ParentsForm(),
-        detail: new MetaDataForm(),
-        links: [{ name: '', path: '' }]
-      },
-      tasks: [TaskView.empty(new Date())],
+      editForm: new EditForm(),
+      tasks: [TaskView.empty()],
       windowWidth: window.innerWidth
     };
   constructor(
     private objectiveRepository: Objective.Repository,
     private actionRepository: Action.Repository,
     private mermaidTreeView: MermaidTreeView,
+    private taskService: TaskService,
     Vue: any
   ) {
 
@@ -64,32 +45,29 @@ export class PjfuVue {
   }
   init(Vue: any) {
     try {
-    this.app = new Vue({
-      el: '#app',
-      data: this.data,
-      methods: {
-        onClickUpdateButton: () => this.update(),
-        onClickTreeUpdateButton: () => this.onUpdate(),
-        onClickApplyTreeCenteredFromSelected: () => this.applyTreeCenteredFromSelected(),
-        onClickSubButton: () => this.createSub(),
-        onClickInsertObjectiveButton: () => this.insertObjective(),
-        onClickInsertActionButton: () => this.insertAction(),
-        onClickRemoveButton: () => this.remove(),
-        onClickTaskLinkButton: (id: AnyId) => this.applyTargetId(id)
-      }
-    });
-    this.onUpdate();
-    this.data.viewMode.selectedMembers = this.data.viewMode.members;// すべてをチェックする
-    window.addEventListener('resize', () => this.handleResize())
-    // this.updateTaskList();
-    // this.mermaidTreeView.update(this.data.viewMode);
+      this.app = new Vue({
+        el: '#app',
+        data: this.data,
+        methods: {
+          onClickUpdateButton: () => this.update(),
+          onClickTreeUpdateButton: () => this.onUpdate(),
+          onClickApplyTreeCenteredFromSelected: () => this.applyTreeCenteredFromSelected(),
+          onClickSubButton: () => this.createSub(),
+          onClickInsertObjectiveButton: () => this.insertObjective(),
+          onClickInsertActionButton: () => this.insertAction(),
+          onClickRemoveButton: () => this.remove(),
+          onClickTaskLinkButton: (id: AnyId) => this.applyTargetId(id)
+        }
+      });
+      this.onUpdate();
+      this.data.viewMode.selectedMembers = this.data.viewMode.members;// すべてをチェックする
+      window.addEventListener('resize', () => this.handleResize())
     } catch(e) {
       console.error(e);
     }
   }
   handleResize() {
     this.data.windowWidth = window.innerWidth;
-    // console.log(this.data.windowWidth);
   }
   applyTreeCenteredFromSelected() {
     this.data.viewMode.modeType = ModeType.targetTree;
@@ -102,20 +80,12 @@ export class PjfuVue {
       id => {
         const objective = this.objectiveRepository.findById(id);
         this.data.editTargetId = objective.id.value;
-        this.data.editForm.id = objective.id.value;
-        this.data.editForm.title = objective.title;
-        this.data.editForm.parents.set(objective.isNotRoot ? [objective.parent!] : [])
-        this.data.editForm.detail.set(objective.metaData)
-        this.data.editForm.links = objective.metaData.links.map(v => ({name: v.name, path: v.path}))
+        this.data.editForm.setObjectiveEntity(objective);
       },
       id => {
         const action = this.actionRepository.findById(id);
         this.data.editTargetId = action.id.value;
-        this.data.editForm.id = action.id.value;
-        this.data.editForm.title = action.title;
-        this.data.editForm.parents.set(action.parents);
-        this.data.editForm.detail.set(action.metaData);
-        this.data.editForm.links = action.metaData.links.map(v => ({name: v.name, path: v.path}))
+        this.data.editForm.setActionEntity(action);
       }
     )
     this.mermaidTreeView.update(this.data.viewMode, id);
@@ -124,47 +94,14 @@ export class PjfuVue {
    * 目標または施策を更新する
    */
   update() {
-    console.log('update');
-    const callbackOnSaved = (e?:Error) => {
-      if(e) {
-        console.error(e);
-        window.alert('エラー: ' + e.message);
-        return;
-      }
-      this.onUpdate();
-    }
-
-    const anyId = new AnyId(this.data.editForm.id);
-    if(anyId.isEmpty()) {
-      throw new Error('IDが空');
-    }
-    anyId.forEach(
-      id => {
-        const newEntity = new Objective.Entity(
-          id,
-          this.data.editForm.title,
-          this.data.editForm.detail.get(new Date()),
-          this.data.editForm.parents.get()[0]
-        )
-        this.objectiveRepository.update(newEntity, callbackOnSaved);
-      },
-      id => {
-        const newEntity = new Action.Entity(
-          id,
-          this.data.editForm.title,
-          this.data.editForm.parents.get(),
-          this.data.editForm.detail.get(new Date())
-        )
-        this.actionRepository.update(newEntity, callbackOnSaved);
-      }
-    )
+    this.data.editForm.toEntity(
+      o => this.objectiveRepository.update(o, AlertCallBack.callbackVoid(() => this.onUpdate())), 
+      a => this.actionRepository.update(a, AlertCallBack.callbackVoid(() => this.onUpdate()))
+    );
   }
 
   createSub() {
-    this.data.editForm.parents.set([new Objective.Id(this.data.editForm.id)])
-    this.data.editForm.id = '';
-    this.data.editForm.title = ''
-    this.data.editForm.detail.set(MetaData.empty());
+    this.data.editForm.setSub()
   }
 
   /**
@@ -177,21 +114,10 @@ export class PjfuVue {
         window.alert('エラー: ' + err.message);
         return;
       }
-      const newEntity = new Objective.Entity(
-        id!,
-        this.data.editForm.title,
-        this.data.editForm.detail.get(new Date()),
-        this.data.editForm.parents.get()[0],
-      )
-      this.objectiveRepository.insert(newEntity, (e) => {
-        console.log('callback');
-        if(e) {
-          console.error(e);
-          window.alert('エラー: ' + e.message);
-          return;
-        }
-        this.onUpdate();
-      });
+      this.objectiveRepository.insert(
+        this.data.editForm.createObjectiveEntity(id!), 
+        AlertCallBack.callbackVoid(() => this.onUpdate())
+      );
     })
   }
 
@@ -199,27 +125,24 @@ export class PjfuVue {
    * 施策を挿入（新規作成）する
    */
   insertAction() {
+    this.actionRepository.createId(
+      AlertCallBack.callback(id => {
+        this.actionRepository.insert(
+          this.data.editForm.createActionEntity(id!), 
+          AlertCallBack.callbackVoid(() => this.onUpdate())
+        )
+      })
+    )
     this.actionRepository.createId((err?, id?) => {
       if(err) {
         console.error(err);
         window.alert('エラー: ' + err.message);
         return;
       }
-      const newEntity = new Action.Entity(
-        id!,
-        this.data.editForm.title,
-        this.data.editForm.parents.get(),
-        this.data.editForm.detail.get(new Date())
-      )
-      this.actionRepository.insert(newEntity, (e) => {
-        console.log('callback');
-        if(e) {
-          console.error(e);
-          window.alert('エラー: ' + e.message);
-          return;
-        }
-        this.onUpdate();
-      });
+      this.actionRepository.insert(
+        this.data.editForm.createActionEntity(id!), 
+        AlertCallBack.callbackVoid(() => this.onUpdate())
+      );
     })
   }
 
@@ -227,8 +150,7 @@ export class PjfuVue {
    * 目標または施策を削除する
    */
   remove() {
-    const anyId = new AnyId(this.data.editForm.id);
-    anyId.forEach(
+    this.data.editForm.forEachId(
       id => {
         if(this.actionRepository.hasChildren(id)) {
           window.alert('子要素を消してください');
@@ -236,26 +158,13 @@ export class PjfuVue {
         }
         this.objectiveRepository.remove(
           id,
-          (e) => {
-            if(e) {
-              window.alert(e.message);
-              throw e;
-            }
-            this.onUpdate();
-            // onTreeUpdate();
-          }
+          AlertCallBack.callbackVoid(() => this.onUpdate())
         )
       },
       id => {
         this.actionRepository.remove(
           id,
-          (e) => {
-            if(e) {
-              window.alert(e.message);
-              throw e;
-            }
-            this.onUpdate();
-          }
+          AlertCallBack.callbackVoid(() => this.onUpdate())
         )
       }
     )
@@ -274,33 +183,73 @@ export class PjfuVue {
     this.data.viewMode.members = Object.keys(memberMap);
   }
   updateTaskList() {
-    const tasks:TaskView[] = []
-    const now = new Date();
-    this.objectiveRepository.findAll().forEach(v => v.metaData.tasks.forEach(t => tasks.push(new TaskView(AnyId.create(v.id), v.title, t, now))))
-    this.actionRepository.findAll().forEach(v => v.metaData.tasks.forEach(t => tasks.push(new TaskView(AnyId.create(v.id), v.title, t, now))))
-    this.data.tasks = tasks.sort((a, b) => a.limitTimestamp - b.limitTimestamp);
-    console.log(tasks);
+    this.data.tasks = this.taskService.findAllPjfuTask().map(v => TaskView.create(v))
+    console.log(this.data.tasks);
   }
 }
 
 
 export class TaskView {
   text: string;
-  limitTimestamp: number;
-  isDone: boolean;
-  isIn2Weeks: boolean;// 過去2週間から未来2週間
   constructor(
     readonly id: AnyId,
     title: string,
-    task: Task,
-    now: Date
+    taskTitle: string,
+    limitDate: TaskLimitDate,
+    public limitTimestamp: number,
+    status: TaskStatus,
+    public isDone: boolean,
+    public isIn2Weeks: boolean// 過去2週間から未来2週間
+
   ) {
-    this.text = `${task.limitDate.raw} ${title} ${task.title}` + (task.status.isNotEmpty() ? ` [${task.status.raw}]` : '')
-    this.limitTimestamp = task.limitDate.time
-    this.isDone = task.status.isDone();
-    this.isIn2Weeks = task.limitDate.isIn2Weeks(now);
+    this.text = `${limitDate.raw} ${title} ${taskTitle}` + (status.isNotEmpty() ? ` [${status.raw}]` : '')
   }
-  static empty(now: Date): TaskView {
-    return new TaskView(new AnyId(''), '', new Task(new TaskLimitDate('', ''), '', new TaskStatus('')), now)
+  static empty(): TaskView {
+    var d = TaskLimitDate.unlimited()
+    return new TaskView(
+      new AnyId(''), 
+      '', 
+      '',
+      d,
+      d.time,
+      new TaskStatus(''),
+      false,
+      false
+    )
+  }
+  static create(task: PjfuTask): TaskView {
+    return new TaskView(
+      task.id, 
+      task.title, 
+      task.taskTitle, 
+      task.limitDate, 
+      task.limitTimestamp, 
+      task.status, 
+      task.isDone, 
+      task.isIn2Weeks
+    )
+  }
+}
+
+class AlertCallBack {
+  static callback<T>(cb:(t:T)=>void):(err?:Error, t?:T)=>void {
+    return (err?:Error, t?:T)=> {
+      if(err) {
+        console.error(err);
+        window.alert('エラー: ' + err.message);
+        return;
+      }
+      cb(t!);
+    }
+  }
+  static callbackVoid<T>(cb:()=>void):(err?:Error)=>void {
+    return (err?:Error)=> {
+      if(err) {
+        console.error(err);
+        window.alert('エラー: ' + err.message);
+        return;
+      }
+      cb();
+    }
   }
 }
