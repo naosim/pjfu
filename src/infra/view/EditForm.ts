@@ -15,7 +15,6 @@ export class ParentsForm {
     }
     return this.value.split(',').map(v => new Objective.Id(v.trim()));
   }
-  
 }
 
 

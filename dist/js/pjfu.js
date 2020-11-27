@@ -155,7 +155,43 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/domain/doma
                         return new Date(raw);
                     }
                     if (segs.length == 2) {
+                        if (segs[0].indexOf('FY') == 0 && segs[1] == '1Q') {
+                            return new Date(`20${segs[0].slice(2)}/6/30`);
+                        }
+                        if (segs[0].indexOf('FY') == 0 && segs[1] == '2Q') {
+                            return new Date(`20${segs[0].slice(2)}/9/30`);
+                        }
+                        if (segs[0].indexOf('FY') == 0 && segs[1] == '3Q') {
+                            return new Date(`20${segs[0].slice(2)}/12/31`);
+                        }
+                        if (segs[0].indexOf('FY') == 0 && segs[1] == '4Q') {
+                            return new Date(`20${parseInt(segs[0].slice(2)) + 1}/3/31`);
+                        }
                         const year = now.getFullYear();
+                        if (segs[1] == '末' || segs[1] == '末日') {
+                            let d = TaskLimitDate.near(now, [
+                                new Date(`${year - 1}/${segs[0]}/1`),
+                                new Date(`${year}/${segs[0]}/1`),
+                                new Date(`${year + 1}/${segs[0]}/1`)
+                            ]);
+                            d.setMonth(d.getMonth() + 1);
+                            d.setDate(d.getDate() - 1);
+                            return d;
+                        }
+                        else if (segs[1] == '上' || segs[1] == '上旬') {
+                            return TaskLimitDate.near(now, [
+                                new Date(`${year - 1}/${segs[0]}/10`),
+                                new Date(`${year}/${segs[0]}/10`),
+                                new Date(`${year + 1}/${segs[0]}/10`)
+                            ]);
+                        }
+                        else if (segs[1] == '中' || segs[1] == '中旬') {
+                            return TaskLimitDate.near(now, [
+                                new Date(`${year - 1}/${segs[0]}/20`),
+                                new Date(`${year}/${segs[0]}/20`),
+                                new Date(`${year + 1}/${segs[0]}/20`)
+                            ]);
+                        }
                         return TaskLimitDate.near(now, [
                             new Date(`${year - 1}/${raw}`),
                             new Date(`${year}/${raw}`),
@@ -928,7 +964,7 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/
                     this.limitTimestamp = limitTimestamp;
                     this.isDone = isDone;
                     this.isIn2Weeks = isIn2Weeks;
-                    this.text = `${limitDate.raw} ${title} ${taskTitle}` + (status.isNotEmpty() ? ` [${status.raw}]` : '');
+                    this.text = `${limitDate.raw} 【${title}】${taskTitle}` + (status.isNotEmpty() ? ` [${status.raw}]` : '');
                 }
                 static empty() {
                     var d = domain_ts_4.TaskLimitDate.unlimited();
