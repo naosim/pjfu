@@ -206,7 +206,7 @@ export class TaskView {
     public isIn2Weeks: boolean// 過去2週間から未来2週間
 
   ) {
-    this.text = `${limitDate.raw} ${title} ${taskTitle}` + (status.isNotEmpty() ? ` [${status.raw}]` : '')
+    this.text = `${limitDate.raw} 【${title}】${taskTitle}` + (status.isNotEmpty() ? ` [${status.raw}]` : '')
   }
   static empty(): TaskView {
     var d = TaskLimitDate.unlimited()
