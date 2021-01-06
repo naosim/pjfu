@@ -134,17 +134,6 @@ export class PjfuVue {
         )
       })
     )
-    this.actionRepository.createId((err?, id?) => {
-      if(err) {
-        console.error(err);
-        window.alert('エラー: ' + err.message);
-        return;
-      }
-      this.actionRepository.insert(
-        this.data.editForm.createActionEntity(id!), 
-        AlertCallBack.callbackVoid(() => this.onUpdate())
-      );
-    })
   }
 
   /**

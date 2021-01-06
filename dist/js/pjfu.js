@@ -918,14 +918,6 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/
                     this.actionRepository.createId(AlertCallBack.callback(id => {
                         this.actionRepository.insert(this.data.editForm.createActionEntity(id), AlertCallBack.callbackVoid(() => this.onUpdate()));
                     }));
-                    this.actionRepository.createId((err, id) => {
-                        if (err) {
-                            console.error(err);
-                            window.alert('エラー: ' + err.message);
-                            return;
-                        }
-                        this.actionRepository.insert(this.data.editForm.createActionEntity(id), AlertCallBack.callbackVoid(() => this.onUpdate()));
-                    });
                 }
                 remove() {
                     if (!window.confirm('削除してよろしいですか？')) {
