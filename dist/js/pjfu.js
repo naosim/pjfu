@@ -1010,7 +1010,12 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/infra/InMem
             InMemoryDataStore = class InMemoryDataStore {
                 constructor(entities) {
                     this.entityMap = {};
-                    entities.forEach(v => this.entityMap[v.id.value] = v);
+                    entities.forEach(v => {
+                        if (this.entityMap[v.id.value]) {
+                            return;
+                        }
+                        this.entityMap[v.id.value] = v;
+                    });
                 }
                 findAll() {
                     return Object.keys(this.entityMap).map(key => this.entityMap[key]);

@@ -8,7 +8,12 @@ export class InMemoryDataStore<I extends StringValueObject, E extends EntityIf<I
 
   constructor(entities: E[]) {
     this.entityMap = {};
-    entities.forEach(v => this.entityMap[v.id.value] = v);
+    entities.forEach(v => {
+      if(this.entityMap[v.id.value]) {// なぜか同一IDが2つある時がある。バグが治るまで、先勝ちにする
+        return
+      }
+      this.entityMap[v.id.value] = v
+    });
   }
 
   findAll(): E[] {
