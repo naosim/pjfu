@@ -62,12 +62,12 @@
       アクション<br>
       <button v-on:click="onClickRemoveButton" v-bind:disabled="editForm.id.length == 0">削除</button>
     
-      <h3>タスク</h3>
+      <h3>施策タスク</h3>
       <ul>
         <li v-for="task in tasks.filter(v => !v.isDone)"><a v-on:click="onClickTaskLinkButton(task.id)">{{task.text}}</a></li>
       </ul>
 
-      <h3>完了済みタスク</h3>
+      <h3>完了済み施策タスク</h3>
       <ul>
         <li v-for="task in tasks.filter(v => v.isDone && v.isIn2Weeks)"><a v-on:click="onClickTaskLinkButton(task.id)">{{task.text}}</a></li>
       </ul>

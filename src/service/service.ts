@@ -6,7 +6,7 @@ import { AnyId } from "../infra/view/AnyId.ts";
 /**
  * タスクの集約。タスクと上位の目標・施策を合わせたもの
  */
-export class PjfuTask {
+export class ActionTask {
   limitTimestamp: number;
   isDone: boolean;
   isIn2Weeks: boolean;// 過去2週間から未来2週間
@@ -35,13 +35,12 @@ export class TaskService {
   ) {}
 
   /**
-   * 全てのタスク取得。期限日昇順
+   * 全ての施策タスク取得。期限日昇順
    */
-  findAllPjfuTask(): PjfuTask[] {
-    const tasks:PjfuTask[] = []
+  findAllActionTask(): ActionTask[] {
+    const tasks:ActionTask[] = []
     const now = new Date();
-    this.objectiveRepository.findAll().forEach(v => v.metaData.tasks.forEach(t => tasks.push(new PjfuTask(AnyId.create(v.id), v.title, t, now))))
-    this.actionRepository.findAll().forEach(v => v.metaData.tasks.forEach(t => tasks.push(new PjfuTask(AnyId.create(v.id), v.title, t, now))))
+    this.actionRepository.findAll().forEach(v => v.metaData.tasks.forEach(t => tasks.push(new ActionTask(AnyId.create(v.id), v.title, t, now))))
     return tasks.sort((a, b) => a.limitTimestamp - b.limitTimestamp);
   }
 }

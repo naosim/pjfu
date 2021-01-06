@@ -5,7 +5,7 @@ import { AnyId } from './AnyId.ts';
 import { MermaidTreeView } from './MermaidTreeView.ts';
 import { ViewModeModel, ModeType } from './ViewModeModel.ts';
 import { EditForm } from './EditForm.ts';
-import { PjfuTask, TaskService } from "../../service/service.ts";
+import { ActionTask, TaskService } from "../../service/service.ts";
 declare global {
   interface Window {
     alert: (message?: any) => void;
@@ -176,7 +176,7 @@ export class PjfuVue {
     this.data.viewMode.members = Object.keys(memberMap);
   }
   updateTaskList() {
-    this.data.tasks = this.taskService.findAllPjfuTask().map(v => TaskView.create(v))
+    this.data.tasks = this.taskService.findAllActionTask().map(v => TaskView.create(v))
     console.log(this.data.tasks);
   }
 }
@@ -210,7 +210,7 @@ export class TaskView {
       false
     )
   }
-  static create(task: PjfuTask): TaskView {
+  static create(task: ActionTask): TaskView {
     return new TaskView(
       task.id, 
       task.title, 
