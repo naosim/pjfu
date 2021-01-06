@@ -78,7 +78,17 @@ export class DataStoreServer implements DataStore {
   }
 
   private saveAction(callback: (err?:Error) => void) {
-    const raw = JSON.stringify(this.actions.map(v => v.toObject()));
+    const ids: {[key:string]:boolean} = {}
+    const list: Action.Entity[] = [];
+    this.actions.map(v => {
+      if(!ids[v.id.value]) {
+        ids[v.id.value] = true;
+        list.push(v);
+      } else {
+        console.error('IDの重複を検知: ' + v.id.value)
+      }
+    })
+    const raw = JSON.stringify(list.map(v => v.toObject()));
     console.log(raw);
     this.textIO.saveActions(raw, callback);
   }
