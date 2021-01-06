@@ -16,6 +16,7 @@ export class ActionTask {
   constructor(
     readonly id: AnyId,
     readonly title: string,
+    readonly members: string[],
     task: Task,
     now: Date
   ) {
@@ -40,7 +41,7 @@ export class TaskService {
   findAllActionTask(): ActionTask[] {
     const tasks:ActionTask[] = []
     const now = new Date();
-    this.actionRepository.findAll().forEach(v => v.metaData.tasks.forEach(t => tasks.push(new ActionTask(AnyId.create(v.id), v.title, t, now))))
+    this.actionRepository.findAll().forEach(v => v.metaData.tasks.forEach(t => tasks.push(new ActionTask(AnyId.create(v.id), v.title, v.metaData.members, t, now))))
     return tasks.sort((a, b) => a.limitTimestamp - b.limitTimestamp);
   }
 }

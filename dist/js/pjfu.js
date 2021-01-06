@@ -774,7 +774,7 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/
 });
 System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/service/service", ["file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/AnyId"], function (exports_10, context_10) {
     "use strict";
-    var AnyId_ts_3, PjfuTask, TaskService;
+    var AnyId_ts_3, ActionTask, TaskService;
     var __moduleName = context_10 && context_10.id;
     return {
         setters: [
@@ -783,10 +783,11 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/service/ser
             }
         ],
         execute: function () {
-            PjfuTask = class PjfuTask {
-                constructor(id, title, task, now) {
+            ActionTask = class ActionTask {
+                constructor(id, title, members, task, now) {
                     this.id = id;
                     this.title = title;
+                    this.members = members;
                     this.taskTitle = task.title;
                     this.limitDate = task.limitDate;
                     this.limitTimestamp = task.limitDate.time;
@@ -795,17 +796,16 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/service/ser
                     this.isIn2Weeks = task.limitDate.isIn2Weeks(now);
                 }
             };
-            exports_10("PjfuTask", PjfuTask);
+            exports_10("ActionTask", ActionTask);
             TaskService = class TaskService {
                 constructor(objectiveRepository, actionRepository) {
                     this.objectiveRepository = objectiveRepository;
                     this.actionRepository = actionRepository;
                 }
-                findAllPjfuTask() {
+                findAllActionTask() {
                     const tasks = [];
                     const now = new Date();
-                    this.objectiveRepository.findAll().forEach(v => v.metaData.tasks.forEach(t => tasks.push(new PjfuTask(AnyId_ts_3.AnyId.create(v.id), v.title, t, now))));
-                    this.actionRepository.findAll().forEach(v => v.metaData.tasks.forEach(t => tasks.push(new PjfuTask(AnyId_ts_3.AnyId.create(v.id), v.title, t, now))));
+                    this.actionRepository.findAll().forEach(v => v.metaData.tasks.forEach(t => tasks.push(new ActionTask(AnyId_ts_3.AnyId.create(v.id), v.title, v.metaData.members, t, now))));
                     return tasks.sort((a, b) => a.limitTimestamp - b.limitTimestamp);
                 }
             };
@@ -945,25 +945,25 @@ System.register("file:///Users/fujitanao/googledrive/script/pjfu/src/infra/view/
                     this.data.viewMode.members = Object.keys(memberMap);
                 }
                 updateTaskList() {
-                    this.data.tasks = this.taskService.findAllPjfuTask().map(v => TaskView.create(v));
+                    this.data.tasks = this.taskService.findAllActionTask().map(v => TaskView.create(v));
                     console.log(this.data.tasks);
                 }
             };
             exports_11("PjfuVue", PjfuVue);
             TaskView = class TaskView {
-                constructor(id, title, taskTitle, limitDate, limitTimestamp, status, isDone, isIn2Weeks) {
+                constructor(id, title, members, taskTitle, limitDate, limitTimestamp, status, isDone, isIn2Weeks) {
                     this.id = id;
                     this.limitTimestamp = limitTimestamp;
                     this.isDone = isDone;
                     this.isIn2Weeks = isIn2Weeks;
-                    this.text = `${limitDate.raw} 【${title}】${taskTitle}` + (status.isNotEmpty() ? ` [${status.raw}]` : '');
+                    this.text = `${limitDate.raw} 【${title} ${members.join(',')}】${taskTitle}` + (status.isNotEmpty() ? ` [${status.raw}]` : '');
                 }
                 static empty() {
                     var d = domain_ts_4.TaskLimitDate.unlimited();
-                    return new TaskView(new AnyId_ts_4.AnyId(''), '', '', d, d.time, new domain_ts_4.TaskStatus(''), false, false);
+                    return new TaskView(new AnyId_ts_4.AnyId(''), '', [], '', d, d.time, new domain_ts_4.TaskStatus(''), false, false);
                 }
                 static create(task) {
-                    return new TaskView(task.id, task.title, task.taskTitle, task.limitDate, task.limitTimestamp, task.status, task.isDone, task.isIn2Weeks);
+                    return new TaskView(task.id, task.title, task.members, task.taskTitle, task.limitDate, task.limitTimestamp, task.status, task.isDone, task.isIn2Weeks);
                 }
             };
             exports_11("TaskView", TaskView);

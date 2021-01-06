@@ -187,6 +187,7 @@ export class TaskView {
   constructor(
     readonly id: AnyId,
     title: string,
+    members: string[],
     taskTitle: string,
     limitDate: TaskLimitDate,
     public limitTimestamp: number,
@@ -195,13 +196,14 @@ export class TaskView {
     public isIn2Weeks: boolean// 過去2週間から未来2週間
 
   ) {
-    this.text = `${limitDate.raw} 【${title}】${taskTitle}` + (status.isNotEmpty() ? ` [${status.raw}]` : '')
+    this.text = `${limitDate.raw} 【${title} ${members.join(',')}】${taskTitle}` + (status.isNotEmpty() ? ` [${status.raw}]` : '')
   }
   static empty(): TaskView {
     var d = TaskLimitDate.unlimited()
     return new TaskView(
       new AnyId(''), 
       '', 
+      [],
       '',
       d,
       d.time,
@@ -214,6 +216,7 @@ export class TaskView {
     return new TaskView(
       task.id, 
       task.title, 
+      task.members,
       task.taskTitle, 
       task.limitDate, 
       task.limitTimestamp, 
